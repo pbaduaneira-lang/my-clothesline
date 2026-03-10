@@ -1475,12 +1475,6 @@ function renderFeed(){
                     <button class="btn-action" onclick="curtirPost(${post.id})">Curtir (${post.likes || 0})</button>
                     <button class="btn-action" onclick="focarComentario(${post.id})">Comentar (${safeComments.length})</button>
                     <button class="btn-action" onclick="compartilharPost(${post.id})">Compartilhar (${post.shares || 0})</button>
-                    ${(currentUser && post.author_id === currentUser.id) ? `
-                        <button class="btn-action" style="color: #ff4444; display: flex; flex-direction: column; align-items: center; line-height: 1;" onclick="excluirPost(${post.id})">
-                            <span style="font-size: 8px;">Derrubar</span>
-                            <span style="font-size: 16px;">🗑️</span>
-                        </button>
-                    ` : ''}
                 </div>
                 <div class="comments-box" id="comments-${post.id}">
                     ${commentsHtml || "Sem comentários ainda."}
