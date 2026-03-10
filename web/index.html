@@ -1053,17 +1053,18 @@ async function loadFeed(isAuto = false) {
         // Se renderFeed for atualizado para receber posts diretamente, esta lógica pode ser movida para lá ou ajustada.
         // Por enquanto, vamos manter a verificação de mudança de dados para evitar re-render desnecessário.
         const newPosts = Array.isArray(posts) ? posts : (posts && posts.value ? posts.value : []);
+        console.log(`Feed carregado: ${newPosts.length} posts.`);
         
-        if (JSON.stringify(newPosts) === JSON.stringify(postsData)) return;
+        // Sempre renderiza na primeira vez ou se houver mudança
+        if (JSON.stringify(newPosts) === JSON.stringify(postsData) && feed.innerHTML !== "") return;
         
         postsData = newPosts;
         renderFeed();
         
-        // Se for carregamento inicial (não auto), joga o scroll para a direita
         if (!isAuto) {
-            const feed = document.getElementById("feed");
+            const feedEl = document.getElementById("feed");
             setTimeout(() => {
-                feed.scrollLeft = feed.scrollWidth;
+                feedEl.scrollLeft = feedEl.scrollWidth;
             }, 500);
         }
     } catch(e) {
@@ -1409,7 +1410,18 @@ window.addEventListener("keydown", (e) => {
 });
 
 function renderFeed(){
-    feed.innerHTML=""
+    feed.innerHTML="";
+    
+    if (postsData.length === 0) {
+        feed.innerHTML = `
+            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100vw; height: 100%; color: #1877f2; font-weight: bold; text-align: center; padding: 20px;">
+                <div style="font-size: 50px; margin-bottom: 20px;">🧺</div>
+                <div>O seu varal ainda está vazio!<br>Pendure uma foto ou siga os amigos.</div>
+            </div>
+        `;
+        return;
+    }
+
     postsData.forEach((post,index)=>{
         const div=document.createElement("div")
         div.className="post"
