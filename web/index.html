@@ -725,6 +725,20 @@ cursor: pointer;
         justify-content: center;
     }
 }
+
+/* AJUSTE PARA GARANTIR VISIBILIDADE DO FEED */
+@media (max-width: 768px) {
+    body {
+        overflow-y: auto !important;
+        height: auto !important;
+    }
+    #scene {
+        height: 550px !important; /* Diminui um pouco para caber no visor */
+    }
+    #feed {
+        padding: 0 10vw !important; /* Diminui o recuo inicial no celular para a foto aparecer logo */
+    }
+}
 </style>
 </head>
 
