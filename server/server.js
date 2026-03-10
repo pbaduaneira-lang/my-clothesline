@@ -386,7 +386,7 @@ app.post("/post", upload.single("media"), async (req, res) => {
     const type = req.file.mimetype.startsWith("video") ? "video" : "image";
 
     const result = await pool.query(
-      "INSERT INTO posts (user_id, media_url, type, caption, author_id, created_at, expires_at) VALUES ($1,$2,$3,$4,$5,NOW(), NOW() + INTERVAL '24 hours') RETURNING *",
+      "INSERT INTO posts (user_id, media_url, type, caption, author_id, created_at, expires_at) VALUES ($1,$2,$3,$4,$5,NOW(), NOW() + INTERVAL '48 hours') RETURNING *",
       [author_id, media_url, type, caption, author_id]
     );
 
@@ -429,7 +429,7 @@ app.post("/post/:id/share", async (req, res) => {
 
     // 3. Cria o novo post (re-postagem)
     await pool.query(
-      "INSERT INTO posts (user_id, media_url, type, caption, author_id, shared_from_id, created_at, expires_at) VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW() + INTERVAL '24 hours')",
+      "INSERT INTO posts (user_id, media_url, type, caption, author_id, shared_from_id, created_at, expires_at) VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW() + INTERVAL '48 hours')",
       [p.user_id, p.media_url, p.type, p.caption, sharerId, originalPostId]
     );
 
