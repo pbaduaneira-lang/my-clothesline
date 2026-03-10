@@ -1474,7 +1474,7 @@ function renderFeed(){
                     <button class="btn-action" onclick="focarComentario(${post.id})">Comentar (${safeComments.length})</button>
                     <button class="btn-action" onclick="compartilharPost(${post.id})">Compartilhar (${post.shares || 0})</button>
                     ${(currentUser && post.author_id === currentUser.id) ? `
-                        <button class="btn-action" style="color: #ff4444;" onclick="excluirPost(${post.id})">🗑️ Derrubar</button>
+                        <button class="btn-action" style="color: #ff4444; font-size: 16px; padding: 0 5px;" title="Derrubar do varal" onclick="excluirPost(${post.id})">🗑️</button>
                     ` : ''}
                 </div>
                 <div class="comments-box" id="comments-${post.id}">
