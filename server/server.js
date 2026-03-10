@@ -104,10 +104,11 @@ async function updateLastSeen(userId) {
 app.post("/register", async (req, res) => {
   try {
     const { name, username, password } = req.body;
+    const lowerUsername = username.toLowerCase();
     const hashedPassword = await bcrypt.hash(password, 10);
     const result = await pool.query(
       "INSERT INTO users (name, username, password) VALUES ($1, $2, $3) RETURNING id, name, username",
-      [name, username, hashedPassword]
+      [name, lowerUsername, hashedPassword]
     );
     res.json(result.rows[0]);
   } catch (err) {
@@ -119,7 +120,8 @@ app.post("/register", async (req, res) => {
 app.post("/login", async (req, res) => {
   try {
     const { username, password } = req.body;
-    const result = await pool.query("SELECT * FROM users WHERE username = $1", [username]);
+    const lowerUsername = username.toLowerCase();
+    const result = await pool.query("SELECT * FROM users WHERE LOWER(username) = $1", [lowerUsername]);
     if (result.rows.length === 0) return res.status(401).json({ error: "Usuário não encontrado" });
 
     const user = result.rows[0];
