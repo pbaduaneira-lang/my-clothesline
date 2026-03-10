@@ -1091,9 +1091,9 @@ function toggleAuth(isLogin) {
 }
 
 async function fazerRegistro() {
-    const name = document.getElementById("regName").value;
-    const username = document.getElementById("regUsername").value;
-    const password = document.getElementById("regPassword").value;
+    const name = document.getElementById("regName").value.trim();
+    const username = document.getElementById("regUsername").value.trim();
+    const password = document.getElementById("regPassword").value.trim();
 
     if (!name || !username || !password) return alert("Preencha todos os campos");
 
@@ -1110,8 +1110,8 @@ async function fazerRegistro() {
 }
 
 async function fazerLogin() {
-    const username = document.getElementById("loginUsername").value;
-    const password = document.getElementById("loginPassword").value;
+    const username = document.getElementById("loginUsername").value.trim();
+    const password = document.getElementById("loginPassword").value.trim();
 
     try {
         const res = await fetch(`${API_BASE}/login`, {
