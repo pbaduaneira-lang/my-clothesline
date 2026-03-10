@@ -104,12 +104,14 @@ async function updateLastSeen(userId) {
 app.post("/register", async (req, res) => {
   try {
     const { name, username, password } = req.body;
-    const lowerUsername = username.toLowerCase();
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const trimmedUsername = username.trim().toLowerCase();
+    const trimmedPassword = password.trim();
+    const hashedPassword = await bcrypt.hash(trimmedPassword, 10);
     const result = await pool.query(
       "INSERT INTO users (name, username, password) VALUES ($1, $2, $3) RETURNING id, name, username",
-      [name, lowerUsername, hashedPassword]
+      [name, trimmedUsername, hashedPassword]
     );
+    console.log(`Novo usuário registrado: ${trimmedUsername}`);
     res.json(result.rows[0]);
   } catch (err) {
     console.error(err);
@@ -120,17 +122,29 @@ app.post("/register", async (req, res) => {
 app.post("/login", async (req, res) => {
   try {
     const { username, password } = req.body;
-    const lowerUsername = username.toLowerCase();
-    const result = await pool.query("SELECT * FROM users WHERE LOWER(username) = $1", [lowerUsername]);
-    if (result.rows.length === 0) return res.status(401).json({ error: "Usuário não encontrado" });
+    const trimmedUsername = username.trim().toLowerCase();
+    const trimmedPassword = password.trim();
+
+    console.log(`Tentativa de login para: ${trimmedUsername}`);
+
+    const result = await pool.query("SELECT * FROM users WHERE LOWER(username) = $1", [trimmedUsername]);
+    
+    if (result.rows.length === 0) {
+      console.log(`Usuário não encontrado: ${trimmedUsername}`);
+      return res.status(401).json({ error: "Usuário não encontrado" });
+    }
 
     const user = result.rows[0];
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.status(401).json({ error: "Senha incorreta" });
+    const isMatch = await bcrypt.compare(trimmedPassword, user.password);
+    
+    if (!isMatch) {
+      console.log(`Senha incorreta para: ${trimmedUsername}`);
+      return res.status(401).json({ error: "Senha incorreta" });
+    }
 
+    console.log(`Login bem-sucedido: ${trimmedUsername}`);
     const token = jwt.sign({ id: user.id, name: user.name }, JWT_SECRET, { expiresIn: "7d" });
     
-    // Atualiza last_seen no login
     await updateLastSeen(user.id);
     
     res.json({ token, user: { id: user.id, name: user.name, username: user.username } });
