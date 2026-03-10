@@ -387,7 +387,7 @@ app.post("/post", upload.single("media"), async (req, res) => {
 
     const result = await pool.query(
       "INSERT INTO posts (user_id, media_url, type, caption, author_id, created_at, expires_at) VALUES ($1,$2,$3,$4,$5,NOW(), NOW() + INTERVAL '24 hours') RETURNING *",
-      [1, media_url, type, caption, author_id]
+      [author_id, media_url, type, caption, author_id]
     );
 
     res.json(result.rows[0]);
@@ -531,6 +531,7 @@ app.get("/feed", async (req, res) => {
       GROUP BY p.id, u.name, f.follower_id
       ORDER BY is_followed DESC, p.created_at ASC
     `, [userId]);
+    console.log(`Feed carregado para usuário ${userId}: ${result.rows.length} posts encontrados.`);
     res.json(result.rows);
   } catch (err) {
     console.error(err);
