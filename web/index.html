@@ -1462,6 +1462,11 @@ function renderFeed(){
                             ${post.is_followed ? 'Seguindo' : '+ Seguir'}
                         </button>
                     ` : ''}
+                    ${(currentUser && post.author_id === currentUser.id) ? `
+                        <button onclick="excluirPost(${post.id})" style="background: none; border: none; color: #ff4444; font-size: 11px; cursor: pointer; display: flex; align-items: center; gap: 3px; padding: 0;" title="Derrubar do varal">
+                            🗑️ <span style="font-size: 9px;">tirar</span>
+                        </button>
+                    ` : ''}
                 </div>
                 ${post.caption && post.caption.trim() !== "" ? `<div class="photo-title">${post.caption}</div>` : ""}
                 <div style="position: relative; width: 100%; height: 180px; background: #eee; border-radius: 2px; overflow: hidden; display: flex; align-items: center; justify-content: center;">
