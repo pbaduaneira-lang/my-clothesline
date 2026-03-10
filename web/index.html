@@ -1,0 +1,1607 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>My Clothesline</title>
+
+<style>
+
+body{
+margin:0;
+font-family:'Segoe UI', Arial, sans-serif;
+background:linear-gradient(to bottom,#b3e5fc,#e1f5fe);
+overflow:hidden;
+height:100vh;
+}
+
+/* TOPO */
+
+header{
+background:white;
+box-shadow:0 2px 10px rgba(0,0,0,0.1);
+padding:10px 20px;
+}
+
+.topbar{
+display:flex;
+align-items:center;
+justify-content:space-between;
+}
+
+.logo{
+display: flex;
+flex-direction: column;
+align-items: flex-start;
+}
+
+.search-box{
+background:#f0f2f5;
+border:none;
+border-radius:20px;
+padding:8px 14px;
+width:220px;
+outline:none;
+}
+
+.user-menu{
+display:flex;
+align-items:center;
+gap:12px;
+}
+
+.icon-btn{
+background:#f0f2f5;
+border:none;
+border-radius:50%;
+width:36px;
+height:36px;
+cursor:pointer;
+font-size:16px;
+}
+
+.user-avatar{
+width:36px;
+height:36px;
+border-radius:50%;
+background:#1877f2;
+color:white;
+display:flex;
+align-items:center;
+justify-content:center;
+font-weight:bold;
+}
+
+/* BOTÃO PENDURAR */
+
+.btn-pendurar{
+background:#1877f2;
+color:white;
+border:none;
+padding:8px 14px;
+border-radius:20px;
+font-size:13px;
+font-weight:bold;
+cursor:pointer;
+}
+
+.btn-pendurar:hover{
+background:#166fe5;
+}
+
+/* VARAL */
+
+#scene{
+position:relative;
+height:650px;
+margin-top:10px;
+display:flex;
+align-items:center;
+}
+
+#rope-container{
+position:absolute;
+top:15px;
+width:100%;
+height:100px;
+z-index:1;
+}
+
+#feed{
+position:relative;
+z-index:2;
+display:flex;
+gap:50px;
+overflow-x:auto;
+padding:0 50vw;
+height:100%;
+align-items:flex-start;
+scroll-behavior:smooth;
+scrollbar-width:none;
+}
+
+#feed::-webkit-scrollbar{
+display:none;
+}
+
+.post{
+position:relative;
+min-width:260px;
+max-width:260px;
+display:flex;
+flex-direction:column;
+align-items:center;
+padding-top:45px;
+transform-origin:top center;
+transition:transform .4s cubic-bezier(.175,.885,.32,1.275);
+animation:balanco 5s ease-in-out infinite alternate;
+}
+
+@keyframes balanco{
+0%{transform:rotate(-1.5deg);}
+100%{transform:rotate(1.5deg);}
+}
+
+.post.center{
+transform:scale(1.25);
+z-index:100;
+}
+
+/* GRAMPO */
+
+.clamp{
+position:absolute;
+top:5px;
+width:14px;
+height:42px;
+background:#d35400;
+border-radius:3px;
+z-index:10;
+box-shadow:2px 2px 5px rgba(0,0,0,0.2);
+border:1px solid #a04000;
+}
+
+.clamp::after{
+content:"";
+position:absolute;
+top:18px;
+left:-2px;
+width:18px;
+height:2px;
+background:#bdc3c7;
+}
+
+/* FOTO */
+
+.photo-card{
+background:white;
+padding:12px;
+box-shadow:0 10px 25px rgba(0,0,0,0.15);
+border-radius:2px;
+width:100%;
+box-sizing:border-box;
+border:1px solid #ddd;
+}
+
+/* TÍTULO */
+
+.photo-title{
+font-size:13px;
+font-weight:bold;
+margin-bottom:6px;
+text-align:center;
+color:#333;
+max-width:100%;
+overflow:hidden;
+white-space:nowrap;
+text-overflow:ellipsis;
+}
+
+/* MEDIA */
+
+.media{
+width:100%;
+height:180px;
+object-fit:cover;
+border-radius:2px;
+}
+
+/* AÇÕES */
+
+.actions{
+display:flex;
+justify-content:space-between;
+padding:10px 5px;
+border-bottom:1px solid #f0f0f0;
+margin-bottom:8px;
+}
+
+.btn-action{
+background:none;
+border:none;
+font-size:12px;
+color:#1877f2;
+cursor:pointer;
+font-weight:bold;
+}
+
+/* COMENTÁRIOS */
+
+.comments-box{
+height:80px;
+overflow-y:auto;
+font-size:11px;
+text-align:left;
+margin-bottom:8px;
+background:#f7f7f7;
+padding:8px;
+border-radius:4px;
+}
+
+.comment-input{
+width:100%;
+border:1px solid #eee;
+padding:8px;
+border-radius:20px;
+font-size:11px;
+box-sizing:border-box;
+outline:none;
+background:#f0f2f5;
+}
+
+/* MODAL */
+
+#modalUpload{
+position:fixed;
+top:0;
+left:0;
+right:0;
+bottom:0;
+background:rgba(0,0,0,0.5);
+display:none;
+align-items:center;
+justify-content:center;
+z-index:3000;
+}
+
+.upload-box{
+background:white;
+padding:20px;
+border-radius:10px;
+width:300px;
+display:flex;
+flex-direction:column;
+gap:10px;
+}
+
+.upload-box input{
+padding:8px;
+}
+
+/* BOTÕES ROLAGEM */
+
+.scrollBtn{
+position:fixed;
+top:50%;
+width:50px;
+height:50px;
+border-radius:50%;
+background:white;
+border:none;
+box-shadow:0 4px 10px rgba(0,0,0,0.2);
+cursor:pointer;
+z-index:1000;
+font-size:20px;
+}
+
+#leftBtn{left:20px;}
+#rightBtn{right:20px;}
+
+/* MODAL LOGIN/REGISTRO */
+
+#modalAuth{
+position:fixed;
+top:0;
+left:0;
+right:0;
+bottom:0;
+background:rgba(0,0,0,0.8);
+display:flex;
+align-items:center;
+justify-content:center;
+z-index:4000;
+}
+
+.auth-box{
+background:white;
+padding:30px;
+border-radius:10px;
+width:320px;
+display:flex;
+flex-direction:column;
+gap:15px;
+box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+}
+
+.auth-box h2 {
+margin-top: 0;
+color: #1877f2;
+text-align: center;
+}
+
+.auth-box input {
+padding: 12px;
+border: 1px solid #ddd;
+border-radius: 6px;
+outline: none;
+}
+
+.auth-box button {
+padding: 12px;
+background: #1877f2;
+color: white;
+border: none;
+border-radius: 6px;
+font-weight: bold;
+cursor: pointer;
+}
+
+.auth-box button:hover {
+background: #166fe5;
+}
+
+.auth-toggle {
+text-align: center;
+font-size: 13px;
+color: #666;
+cursor: pointer;
+}
+
+.auth-toggle b {
+color: #1877f2;
+}
+
+/* MODAL LOGIN/REGISTRO */
+
+#btnLogout {
+background: #ff4444;
+color: white;
+border: none;
+padding: 5px 10px;
+border-radius: 4px;
+font-size: 11px;
+cursor: pointer;
+}
+
+/* LISTA ONLINE */
+.online-dropdown {
+    position: absolute;
+    top: 45px;
+    right: 0;
+    background: white;
+    width: 200px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+    border-radius: 8px;
+    display: none;
+    flex-direction: column;
+    z-index: 5000;
+    border: 1px solid #ddd;
+}
+
+.online-user-item {
+    padding: 10px 15px;
+    font-size: 13px;
+    border-bottom: 1px solid #f9f9f9;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #333;
+}
+
+.online-dot {
+    width: 10px;
+    height: 10px;
+    background: #28a745;
+    border-radius: 50%;
+    box-shadow: 0 0 5px #28a745;
+}
+
+/* MODAL MENSAGENS / CHAT */
+#modalMessages {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.5);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 5500;
+}
+
+.chat-box {
+    background: white;
+    width: 400px;
+    height: 500px;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 15px 50px rgba(0,0,0,0.3);
+}
+
+.notification-badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: #ff4444;
+    color: white;
+    font-size: 10px;
+    font-weight: bold;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid white;
+}
+
+.conversations-box {
+    max-height: 150px;
+    overflow-y: auto;
+    border-top: 1px solid #eee;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.conversation-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px;
+    border-radius: 8px;
+    background: #f8f9fa;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.conversation-item:hover {
+    background: #e9ecef;
+}
+
+.conversation-info {
+    flex: 1;
+    font-size: 13px;
+}
+
+.conversation-name {
+    font-weight: bold;
+}
+
+.conversation-last-msg {
+    font-size: 11px;
+    color: #666;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 180px;
+}
+
+.conversation-unread {
+    background: #ff4444;
+    color: white;
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 10px;
+    margin-left: 5px;
+}
+
+.btn-delete-conv {
+    background: none;
+    border: none;
+    color: #ccc;
+    cursor: pointer;
+    font-size: 14px;
+    padding: 5px;
+}
+
+.btn-delete-conv:hover {
+    color: #ff4444;
+}
+
+.search-result-item {
+    padding: 10px;
+    cursor: pointer;
+    border-bottom: 1px solid #eee;
+    font-size: 13px;
+    transition: background 0.2s;
+}
+
+.search-result-item:hover {
+    background: #f0f2f5;
+}
+
+.chat-header {
+    background: #1877f2;
+    color: white;
+    padding: 15px;
+    font-weight: bold;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+#chatContainer {
+    flex: 1;
+    overflow-y: auto;
+    padding: 15px;
+    background: #f0f2f5;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.message-item {
+    background: white;
+    padding: 8px 12px;
+    border-radius: 15px;
+    max-width: 80%;
+    font-size: 14px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    align-self: flex-start;
+}
+
+.message-item.mine {
+    background: #dcf8c6;
+    align-self: flex-end;
+}
+
+.message-info {
+    font-size: 10px;
+    color: #888;
+    margin-bottom: 2px;
+}
+
+.chat-footer {
+    padding: 10px;
+    border-top: 1px solid #eee;
+    display: flex;
+    gap: 10px;
+    background: white;
+}
+
+#chatInput {
+    flex: 1;
+    border: 1px solid #ddd;
+    border-radius: 20px;
+    padding: 8px 15px;
+    outline: none;
+}
+
+.btn-send {
+    background: #1877f2;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 20px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+/* ZOOM MODAL (LIGHTBOX) */
+#modalZoom {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.9);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 6000;
+    cursor: zoom-out;
+    animation: fadeIn 0.3s ease;
+}
+
+#imgZoom {
+    max-width: 90%;
+    max-height: 90%;
+    border-radius: 8px;
+    box-shadow: 0 0 50px rgba(0,0,0,0.5);
+    transform: scale(1);
+    transition: transform 0.2s ease;
+    animation: zoomIn 0.3s ease forwards;
+}
+
+.zoom-controls {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 15px;
+    background: rgba(255,255,255,0.2);
+    padding: 10px 20px;
+    border-radius: 50px;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.3);
+}
+
+.zoom-btn {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    border: none;
+    background: white;
+    color: #333;
+    font-size: 20px;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    transition: all 0.2s;
+}
+
+.zoom-btn:hover {
+    transform: scale(1.1);
+    background: #1877f2;
+    color: white;
+}
+
+.zoom-btn.close {
+    background: #ff4444;
+    color: white;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes zoomIn {
+    from { transform: scale(0.8); }
+    to { transform: scale(1); }
+}
+
+</style>
+</head>
+
+<body>
+
+<header>
+
+<div class="topbar">
+
+<div class="logo">
+    <div style="background: linear-gradient(45deg, #1877f2, #ff007f); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; font-weight: 800; font-size: 26px; display: inline-block;">My Clothesline</div>
+    <div style="background: linear-gradient(45deg, #ff007f, #ff8a00); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; font-size: 15px; font-weight: 600; text-align: left; margin-top: -4px;">Meu Varal</div>
+</div>
+
+<div id="userProfileHeader" style="display: flex; align-items: center; gap: 8px; cursor: pointer; margin-left: 15px;">
+    <div class="user-avatar" id="userInitial">?</div>
+    <div style="display: flex; flex-direction: column;">
+        <span id="userNameHeader" style="font-size: 13px; font-weight: 700; color: #333; line-height: 1.2;"></span>
+        <div style="display: flex; align-items: center; gap: 5px;">
+            <span style="font-size: 10px; color: #28a745; font-weight: bold;">Conectado</span>
+            <button onclick="abrirSeguidores()" style="background: #fff9c4; border: none; font-size: 8px; padding: 1px 4px; border-radius: 3px; cursor: pointer; color: #333; font-weight: bold; line-height: 1;">
+                Seguidores: <span id="followerCount">0</span>
+            </button>
+        </div>
+        <button id="btnVoltarFeed" onclick="voltarParaVaralGlobal()" style="display: none; background: #ff5252; border: none; font-size: 8px; padding: 1px 4px; border-radius: 3px; cursor: pointer; color: white; font-weight: bold; line-height: 1; margin-top: 3px;">
+            Voltar
+        </button>
+    </div>
+</div>
+
+<div style="position: relative; max-width: 220px; margin: 0 15px;">
+    <input class="search-box" style="width: 100%; margin: 0;" placeholder="Buscar usuários no varal..." oninput="buscarUsuariosGlobal()" id="globalSearchInput">
+    <div id="searchResultsGlobal" style="position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #ddd; border-radius: 0 0 8px 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); z-index: 2000; display: none; max-height: 300px; overflow-y: auto;"></div>
+    <div id="profileStatusBanner" style="display:none; text-align:center; font-size:11px; color:#1877f2; font-weight:bold; margin-top:3px; position:absolute; width:100%; top:100%;"></div>
+</div>
+
+<div class="user-menu">
+
+<button id="btnPendurarTopo" class="btn-pendurar">➕ Pendurar</button>
+
+<div style="position: relative; display: inline-block;">
+    <button id="btnOnline" class="btn-pendurar" style="background: #28a745;" onclick="toggleOnlineList()">🟢 Online (<span id="onlineCount">0</span>)</button>
+    <div id="onlineList" class="online-dropdown">
+        <div style="padding: 10px; font-size: 13px; font-weight: bold; border-bottom: 1px solid #eee; background: #f8f9fa; border-radius: 8px 8px 0 0;">Quem está online</div>
+        <div id="onlineUsersContainer" style="max-height: 250px; overflow-y: auto;">
+            <div style="padding: 15px; font-size: 12px; color: #999; text-align: center;">Carregando...</div>
+        </div>
+    </div>
+</div>
+
+<div style="position: relative; display: inline-block;">
+    <button id="btnMensagens" class="btn-pendurar" style="background: #673ab7; margin-right: 5px;" onclick="abrirMensagens()">Mensagens</button>
+    <div id="msgNotificationCount" class="notification-badge">0</div>
+</div>
+
+<button class="icon-btn">🔔</button>
+
+<button id="btnLogout" onclick="logout()" style="margin-left: 5px;">Sair</button>
+
+</div>
+
+</div>
+
+</header>
+
+<div id="scene">
+
+<svg id="rope-container" preserveAspectRatio="none" viewBox="0 0 1000 100">
+
+<path d="M0 45 Q500 45 1000 45"
+stroke="#795548"
+stroke-width="3"
+fill="none"/>
+
+</svg>
+
+<div id="feed"></div>
+
+</div>
+
+<button id="leftBtn" class="scrollBtn">◀</button>
+<button id="rightBtn" class="scrollBtn">▶</button>
+
+<!-- MODAL SEGUIDORES -->
+<div id="modalFollowers" class="modal">
+    <div class="modal-content" style="max-width: 400px;">
+        <div class="modal-header">
+            <h3>Seguidores</h3>
+            <button class="close-btn" onclick="fecharSeguidores()">&times;</button>
+        </div>
+        <div id="followersList" style="max-height: 300px; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; gap: 10px;">
+            <div style="text-align:center; color:#999; padding:20px;">Carregando seguidores...</div>
+        </div>
+        <div style="padding: 10px; border-top: 1px solid #eee; background: #f8f9fa;">
+            <div style="font-size: 12px; font-weight: bold; margin-bottom: 8px; color: #555;">Sugestões de Conexão</div>
+            <div id="followerSuggestions" style="max-height: 150px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;">
+                <!-- Sugestões baseadas em quem está online -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL ZOOM -->
+<div id="modalZoom" onclick="fecharZoom()">
+    <img id="imgZoom" src="" onclick="event.stopPropagation()">
+    <div class="zoom-controls" onclick="event.stopPropagation()">
+        <button class="zoom-btn" onclick="ajustarZoom(-0.2)">−</button>
+        <button class="zoom-btn" onclick="ajustarZoom(0.2)">＋</button>
+        <button class="zoom-btn close" onclick="fecharZoom()">✕</button>
+    </div>
+</div>
+
+<!-- MODAL MENSAGENS -->
+<div id="modalMessages" onclick="fecharMensagens()">
+    <div class="chat-box" onclick="event.stopPropagation()">
+        <div class="chat-header">
+            <span id="chatTitle">Mensagens Diretas</span>
+            <button onclick="fecharMensagens()" style="background:none; border:none; color:white; font-size:18px; cursor:pointer;">✕</button>
+        </div>
+        <div style="padding: 10px; border-bottom: 1px solid #eee; background: white; display: flex; flex-direction: column; gap: 5px;">
+            <input type="text" id="userSearchInput" placeholder="🔍 Procurar pessoa..." oninput="filtrarUsuariosParaChat()" style="padding: 8px; border-radius: 6px; border: 1px solid #ddd; outline: none; font-size: 13px;">
+            <div id="searchResults" style="max-height: 120px; overflow-y: auto; display: none; background: white; border: 1px solid #eee; border-radius: 4px;"></div>
+        </div>
+        <div id="conversationsContainer" class="conversations-box">
+            <!-- Lista de conversas recentes aqui -->
+        </div>
+        <div id="chatContainer">
+            <div style="text-align:center; color:#999; font-size:13px; padding:40px;">
+                Escolha alguém para começar a conversar.
+            </div>
+        </div>
+        <div class="chat-footer">
+            <input type="text" id="chatInput" placeholder="Digite sua mensagem..." onkeypress="if(event.key==='Enter') enviarMensagem()">
+            <button class="btn-send" onclick="enviarMensagem()">Enviar</button>
+        </div>
+    </div>
+</div>
+
+<div id="modalAuth">
+    <div class="auth-box" id="loginForm">
+        <h2>Entrar</h2>
+        <input type="text" id="loginUsername" placeholder="Usuário">
+        <input type="password" id="loginPassword" placeholder="Senha">
+        <button onclick="fazerLogin()">Entrar</button>
+        <div class="auth-toggle" onclick="toggleAuth(false)">Não tem conta? <b>Registrar</b></div>
+    </div>
+
+    <div class="auth-box" id="registerForm" style="display:none;">
+        <h2>Criar Conta</h2>
+        <input type="text" id="regName" placeholder="Nome Completo">
+        <input type="text" id="regUsername" placeholder="Usuário">
+        <input type="password" id="regPassword" placeholder="Senha">
+        <button onclick="fazerRegistro()">Criar Conta</button>
+        <div class="auth-toggle" onclick="toggleAuth(true)">Já tem conta? <b>Entrar</b></div>
+    </div>
+</div>
+
+<div id="modalUpload">
+
+<div class="upload-box">
+
+<h3>Pendurar no varal</h3>
+
+<input type="file" id="mediaFile">
+
+<textarea id="caption" maxlength="100" placeholder="Escreva algo sobre isso... (máx. 2 linhas)" style="resize:none; padding:8px; height:50px; font-family: inherit;"></textarea>
+
+<button onclick="pendurarPost()">Pendurar</button>
+
+<button onclick="fecharUpload()">Cancelar</button>
+
+</div>
+
+</div>
+
+<script>
+
+async function buscarUsuariosGlobal() {
+    const query = document.getElementById("globalSearchInput").value;
+    const results = document.getElementById("searchResultsGlobal");
+    if (query.length < 2) {
+        results.style.display = "none";
+        return;
+    }
+    
+    try {
+        const res = await fetch(`${API_BASE}/users/search?q=${encodeURIComponent(query)}`);
+        const users = await res.json();
+        
+        if (users.length === 0) {
+            results.innerHTML = `<div style="padding: 10px; color: #999; text-align: center;">Nenhum usuário encontrado</div>`;
+        } else {
+            results.innerHTML = users.map(u => `
+                <div class="search-result-item" onclick="abrirPerfilUsuario(${u.id}, '${u.name.replace(/'/g, "\\'")}', '@${u.username}')">
+                    <div class="user-avatar" style="width:30px; height:30px; font-size:12px;">${u.name[0].toUpperCase()}</div>
+                    <div>
+                        <div style="font-weight:bold;">${u.name}</div>
+                        <div style="font-size:11px; color:#666;">@${u.username}</div>
+                    </div>
+                </div>
+            `).join("");
+        }
+        results.style.display = "block";
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+async function abrirPerfilUsuario(id, name, username) {
+    document.getElementById("searchResultsGlobal").style.display = "none";
+    document.getElementById("globalSearchInput").value = "";
+    
+    viewingUserId = id; // Define que estamos vendo este usuário
+    
+    // Mostra o banner de status e botão voltar
+    const banner = document.getElementById("profileStatusBanner");
+    banner.innerHTML = `Olhando o varal do <b>${name}</b>`;
+    banner.style.display = "block";
+    
+    document.getElementById("btnVoltarFeed").style.display = "block";
+    
+    carregarFeedUsuarioDireto(id);
+}
+
+async function voltarParaVaralGlobal() {
+    viewingUserId = null; // Volta para o global
+    document.getElementById("profileStatusBanner").style.display = "none";
+    document.getElementById("btnVoltarFeed").style.display = "none";
+    loadFeed();
+}
+
+async function carregarFeedUsuarioDireto(userId) {
+    try {
+        const headers = {};
+        if (token) headers["Authorization"] = `Bearer ${token}`;
+        const res = await fetch(`${API_BASE}/feed/user/${userId}`, { headers });
+        const posts = await res.json();
+        
+        postsData = Array.isArray(posts) ? posts : [];
+        renderFeed();
+        
+        // Joga o scroll para a direita (mais recentes do usuário)
+        const feedEl = document.getElementById("feed");
+        setTimeout(() => {
+            feedEl.scrollLeft = feedEl.scrollWidth;
+        }, 300);
+        
+    } catch (e) {
+        console.error(e);
+        alert("Erro ao carregar o varal desse usuário.");
+    }
+}
+
+// Fechar resultados de busca ao clicar fora
+document.addEventListener("click", (e) => {
+    const searchResults = document.getElementById("searchResultsGlobal");
+    const searchInput = document.getElementById("globalSearchInput");
+    if (e.target !== searchResults && e.target !== searchInput) {
+        searchResults.style.display = "none";
+    }
+});
+
+const feed=document.getElementById("feed")
+
+// Define a URL base do backend dinamicamente (vazio para assumir a mesma origem no Render)
+const API_BASE = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" 
+    ? "http://localhost:3000" 
+    : window.location.origin;
+
+let postsData=[];
+let currentUser = JSON.parse(localStorage.getItem("user") || "null");
+let token = localStorage.getItem("token");
+let viewingUserId = null; // null para global, ID para perfil específico
+
+async function seguirUsuario(id) {
+    if (!token) return;
+    try {
+        await fetch(`${API_BASE}/follow/${id}`, {
+            method: "POST",
+            headers: { "Authorization": `Bearer ${token}` }
+        });
+        loadFeed();
+    } catch (e) {
+        console.error("Erro ao seguir:", e);
+    }
+}
+
+async function pararDeSeguir(id) {
+    if (!token) return;
+    try {
+        await fetch(`${API_BASE}/follow/${id}`, {
+            method: "DELETE",
+            headers: { "Authorization": `Bearer ${token}` }
+        });
+        loadFeed();
+    } catch (e) {
+        console.error("Erro ao parar de seguir:", e);
+    }
+}
+
+async function loadFeed(isAuto = false) {
+    try {
+        const headers = {};
+        if (token) headers["Authorization"] = `Bearer ${token}`;
+        
+        const res = await fetch(`${API_BASE}/feed`, { headers });
+        if (!res.ok) throw new Error(`Falha ao carregar feed: ${res.status}`);
+        const posts = await res.json();
+        
+        // Verifica se houve mudança real para evitar re-renderizar à toa
+        // A comparação deve ser feita com os posts que estão sendo exibidos, não com postsData
+        // Se renderFeed for atualizado para receber posts diretamente, esta lógica pode ser movida para lá ou ajustada.
+        // Por enquanto, vamos manter a verificação de mudança de dados para evitar re-render desnecessário.
+        const newPosts = Array.isArray(posts) ? posts : (posts && posts.value ? posts.value : []);
+        
+        if (JSON.stringify(newPosts) === JSON.stringify(postsData)) return;
+        
+        postsData = newPosts;
+        renderFeed();
+        
+        // Se for carregamento inicial (não auto), joga o scroll para a direita
+        if (!isAuto) {
+            const feed = document.getElementById("feed");
+            setTimeout(() => {
+                feed.scrollLeft = feed.scrollWidth;
+            }, 500);
+        }
+    } catch(e) {
+        if (!isAuto) console.error("Erro ao carregar feed:", e);
+    }
+}
+
+// Auto-refresh removido daqui (redundante, já existe no final do arquivo)
+
+async function updateProfileStats() {
+    if (!currentUser || !token) return;
+    try {
+        const res = await fetch(`${API_BASE}/users/profile/stats`, {
+            headers: { "Authorization": `Bearer ${token}` }
+        });
+        const data = await res.json();
+        document.getElementById("followerCount").textContent = data.followers;
+    } catch (e) {
+        console.error("Erro ao carregar stats:", e);
+    }
+}
+
+async function abrirSeguidores() {
+    document.getElementById("modalFollowers").style.display = "flex";
+    carregarSeguidores();
+}
+
+function fecharSeguidores() {
+    document.getElementById("modalFollowers").style.display = "none";
+}
+
+async function carregarSeguidores() {
+    if (!token) return;
+    try {
+        const res = await fetch(`${API_BASE}/users/followers`, {
+            headers: { "Authorization": `Bearer ${token}` }
+        });
+        const followers = await res.json();
+        const list = document.getElementById("followersList");
+        
+        if (followers.length === 0) {
+            list.innerHTML = `<div style="text-align:center; color:#999; padding:20px; font-size:13px;">Você ainda não tem seguidores.</div>`;
+        } else {
+            list.innerHTML = followers.map(f => `
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; background: #f8f9fa; border-radius: 8px;">
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <div class="user-avatar" style="width:30px; height:30px; font-size:12px;">${f.name[0].toUpperCase()}</div>
+                        <div>
+                            <div style="font-size:13px; font-weight:bold;">${f.name}</div>
+                            <div style="font-size:11px; color:#666;">@${f.username}</div>
+                        </div>
+                    </div>
+                </div>
+            `).join("");
+        }
+
+        // Carrega sugestões (quem está online e o usuário não segue ainda)
+        const resOnline = await fetch(`${API_BASE}/online-users`);
+        const online = await resOnline.json();
+        const suggestions = document.getElementById("followerSuggestions");
+        
+        // Simplesmente mostra quem está online para "convidar" (seguir)
+        const potential = online.filter(u => u.id !== currentUser.id);
+        if (potential.length === 0) {
+            suggestions.innerHTML = `<div style="font-size:11px; color:#999; text-align:center;">Ninguém novo online agora.</div>`;
+        } else {
+            suggestions.innerHTML = potential.map(u => `
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 5px;">
+                    <div style="font-size:12px;"><b>${u.name}</b> (@${u.username})</div>
+                    <button onclick="seguirUsuario(${u.id})" style="background: #1877f2; color: white; border: none; font-size: 10px; padding: 3px 8px; border-radius: 4px; cursor: pointer;">Seguir</button>
+                </div>
+            `).join("");
+        }
+
+    } catch (e) {
+        console.error("Erro ao carregar seguidores:", e);
+    }
+}
+
+function checkAuth() {
+    if (currentUser && token) {
+        document.getElementById("modalAuth").style.display = "none";
+        document.getElementById("userInitial").textContent = currentUser.name[0].toUpperCase();
+        document.getElementById("userNameHeader").textContent = currentUser.name;
+        updateProfileStats();
+    } else {
+        document.getElementById("modalAuth").style.display = "flex";
+    }
+}
+
+function toggleAuth(isLogin) {
+    document.getElementById("loginForm").style.display = isLogin ? "flex" : "none";
+    document.getElementById("registerForm").style.display = isLogin ? "none" : "flex";
+}
+
+async function fazerRegistro() {
+    const name = document.getElementById("regName").value;
+    const username = document.getElementById("regUsername").value;
+    const password = document.getElementById("regPassword").value;
+
+    if (!name || !username || !password) return alert("Preencha todos os campos");
+
+    try {
+        const res = await fetch(`${API_BASE}/register`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ name, username, password })
+        });
+        if (!res.ok) throw new Error("Erro ao registrar");
+        alert("Conta criada! Agora faça login.");
+        toggleAuth(true);
+    } catch(e) { alert(e.message); }
+}
+
+async function fazerLogin() {
+    const username = document.getElementById("loginUsername").value;
+    const password = document.getElementById("loginPassword").value;
+
+    try {
+        const res = await fetch(`${API_BASE}/login`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ username, password })
+        });
+        if (!res.ok) throw new Error("Usuário ou senha inválidos");
+        const data = await res.json();
+        localStorage.setItem("user", JSON.stringify(data.user));
+        localStorage.setItem("token", data.token);
+        currentUser = data.user;
+        token = data.token;
+        checkAuth();
+        loadFeed();
+    } catch(e) { alert(e.message); }
+}
+
+function logout() {
+    localStorage.removeItem("user");
+    localStorage.removeItem("token");
+    location.reload();
+}
+
+async function updateOnlineStatus() {
+    if (!currentUser || !token) return;
+    
+    try {
+        // Envia Batimento Cardíaco (Heartbeat)
+        await fetch(`${API_BASE}/heartbeat`, {
+            method: "POST",
+            headers: { "Authorization": `Bearer ${token}` }
+        });
+
+        // Busca lista de usuários online
+        const res = await fetch(`${API_BASE}/online-users`);
+        if (!res.ok) return;
+        const users = await res.json();
+        
+        document.getElementById("onlineCount").textContent = users.length;
+        
+        const container = document.getElementById("onlineUsersContainer");
+        if (users.length === 0) {
+            container.innerHTML = `<div style="padding: 15px; font-size: 12px; color: #999; text-align: center;">Ninguém online</div>`;
+        } else {
+            container.innerHTML = users.map(u => `
+                <div class="online-user-item">
+                    <div class="online-dot"></div>
+                    <b>${u.name}</b> (@${u.username})
+                </div>
+            `).join("");
+        }
+    } catch (e) {
+        console.error("Erro ao atualizar status online:", e);
+    }
+}
+
+let currentChatUserId = null;
+
+async function updateUnreadCount() {
+    if (!currentUser || !token) return;
+    try {
+        const res = await fetch(`${API_BASE}/messages/unread/count`, {
+            headers: { "Authorization": `Bearer ${token}` }
+        });
+        const data = await res.json();
+        const badge = document.getElementById("msgNotificationCount");
+        if (data.count > 0) {
+            badge.textContent = data.count;
+            badge.style.display = "flex";
+        } else {
+            badge.style.display = "none";
+        }
+    } catch (e) {
+        console.error("Erro ao buscar notificações:", e);
+    }
+}
+
+async function carregarConversas() {
+    if (!currentUser || !token) return;
+    try {
+        const res = await fetch(`${API_BASE}/conversations`, {
+            headers: { "Authorization": `Bearer ${token}` }
+        });
+        const conversations = await res.json();
+        const container = document.getElementById("conversationsContainer");
+        
+        if (conversations.length === 0) {
+            container.innerHTML = `<div style="text-align:center; color:#999; font-size:11px; padding:10px;">Sem conversas recentes</div>`;
+            return;
+        }
+
+        container.innerHTML = conversations.map(c => `
+            <div class="conversation-item" onclick="selecionarUsuarioParaChat(${c.id}, '${c.name.replace(/'/g, "\\'")}')">
+                <div class="conversation-info">
+                    <div class="conversation-name">${c.name} ${c.unread_count > 0 ? `<span class="conversation-unread">${c.unread_count}</span>` : ''}</div>
+                    <div class="conversation-last-msg">${c.last_text || ''}</div>
+                </div>
+                <button class="btn-delete-conv" onclick="event.stopPropagation(); deletarConversa(${c.id})">🗑️</button>
+            </div>
+        `).join("");
+    } catch (e) {
+        console.error("Erro ao carregar conversas:", e);
+    }
+}
+
+async function deletarConversa(id) {
+    if (!confirm("Tem certeza que deseja excluir esta conversa?")) return;
+    try {
+        await fetch(`${API_BASE}/conversations/${id}`, {
+            method: "DELETE",
+            headers: { "Authorization": `Bearer ${token}` }
+        });
+        carregarConversas();
+        if (currentChatUserId === id) {
+            currentChatUserId = null;
+            document.getElementById("chatTitle").textContent = "Mensagens Diretas";
+            document.getElementById("chatContainer").innerHTML = `<div style="text-align:center; color:#999; font-size:13px; padding:40px;">Conversa excluída.</div>`;
+        }
+    } catch (e) {
+        console.error("Erro ao deletar conversa:", e);
+    }
+}
+
+async function carregarMensagens(isAuto = false) {
+    if (!currentUser || !token || !currentChatUserId) return;
+    try {
+        // Marca como lida ao abrir/carregar
+        if (!isAuto) {
+            fetch(`${API_BASE}/messages/read/${currentChatUserId}`, {
+                method: "POST",
+                headers: { "Authorization": `Bearer ${token}` }
+            }).then(() => updateUnreadCount());
+        }
+
+        const res = await fetch(`${API_BASE}/messages/${currentChatUserId}`, {
+            headers: { "Authorization": `Bearer ${token}` }
+        });
+        if (!res.ok) return;
+        const messages = await res.json();
+        
+        const container = document.getElementById("chatContainer");
+        const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 50;
+
+        container.innerHTML = messages.map(m => `
+            <div class="message-item ${m.sender_id === currentUser.id ? 'mine' : ''}">
+                <div class="message-info">${m.sender_name} (@${m.sender_username})</div>
+                <div>${m.text}</div>
+            </div>
+        `).join("");
+
+        if (isNearBottom || !isAuto) {
+            container.scrollTop = container.scrollHeight;
+        }
+    } catch (e) {
+        if (!isAuto) console.error("Erro ao carregar mensagens:", e);
+    }
+}
+
+async function enviarMensagem() {
+    const input = document.getElementById("chatInput");
+    const text = input.value.trim();
+    if (!text || !currentChatUserId) return;
+    
+    input.value = "";
+    try {
+        const res = await fetch(`${API_BASE}/messages`, {
+            method: "POST",
+            headers: { 
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${token}`
+            },
+            body: JSON.stringify({ text, receiver_id: currentChatUserId })
+        });
+        if (res.ok) {
+            carregarMensagens();
+        }
+    } catch (e) {
+        console.error("Erro ao enviar mensagem:", e);
+    }
+}
+
+function abrirMensagens() {
+    document.getElementById("modalMessages").style.display = "flex";
+    carregarConversas();
+    if (currentChatUserId) carregarMensagens();
+}
+
+function fecharMensagens() {
+    document.getElementById("modalMessages").style.display = "none";
+}
+
+function toggleOnlineList() {
+    const list = document.getElementById("onlineList");
+    const isVisible = list.style.display === "flex";
+    list.style.display = isVisible ? "none" : "flex";
+    if (!isVisible) updateOnlineStatus();
+}
+
+let currentScale = 1;
+
+function abrirZoom(url) {
+    const modal = document.getElementById("modalZoom");
+    const img = document.getElementById("imgZoom");
+    img.src = url;
+    currentScale = 1;
+    img.style.transform = `scale(${currentScale})`;
+    modal.style.display = "flex";
+}
+
+function ajustarZoom(delta) {
+    currentScale += delta;
+    if (currentScale < 0.5) currentScale = 0.5;
+    if (currentScale > 3) currentScale = 3;
+    const img = document.getElementById("imgZoom");
+    img.style.transform = `scale(${currentScale})`;
+}
+
+function fecharZoom() {
+    document.getElementById("modalZoom").style.display = "none";
+}
+
+// Fechar zoom com ESC
+window.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") fecharZoom();
+});
+
+function renderFeed(){
+    feed.innerHTML=""
+    postsData.forEach((post,index)=>{
+        const div=document.createElement("div")
+        div.className="post"
+        div.style.animationDelay=`${index*0.2}s`
+
+        let safeComments = [];
+        if (Array.isArray(post.comments)) {
+            safeComments = post.comments;
+        } else if (typeof post.comments === 'string') {
+            try { safeComments = JSON.parse(post.comments); } catch(e){}
+        }
+
+        const commentsHtml=safeComments.map(c=>
+            `<div style="margin-bottom:4px;border-bottom:1px solid #eee;padding-bottom:2px;">
+                <b>${c.author_name || "Anônimo"}:</b> ${c.text}
+            </div>`
+        ).join("")
+
+        let imgUrl = post.url ? post.url : `${API_BASE}/uploads/${post.media_url}`;
+
+        div.innerHTML=`
+            <div class="clamp"></div>
+            <div class="photo-card">
+                <div style="font-size: 11px; color: #666; margin-bottom: 5px; display: flex; justify-content: space-between; align-items: center;">
+                    <div>${post.shared_from_id ? 'Compartilhado' : 'Postado'} por <b>${post.author_name || "Desconhecido"}</b></div>
+                    ${(currentUser && post.author_id !== currentUser.id) ? `
+                        <button onclick="${post.is_followed ? `pararDeSeguir(${post.author_id})` : `seguirUsuario(${post.author_id})`}" style="background: none; border: 1px solid ${post.is_followed ? '#ccc' : '#1877f2'}; color: ${post.is_followed ? '#999' : '#1877f2'}; font-size: 10px; padding: 2px 6px; border-radius: 4px; cursor: pointer;">
+                            ${post.is_followed ? 'Seguindo' : '+ Seguir'}
+                        </button>
+                    ` : ''}
+                </div>
+                ${post.caption && post.caption.trim() !== "" ? `<div class="photo-title">${post.caption}</div>` : ""}
+                <img class="media" src="${imgUrl}" onclick="abrirZoom('${imgUrl}')" style="cursor: zoom-in;">
+                <div class="actions">
+                    <button class="btn-action" onclick="curtirPost(${post.id})">Curtir (${post.likes || 0})</button>
+                    <button class="btn-action" onclick="focarComentario(${post.id})">Comentar (${safeComments.length})</button>
+                    <button class="btn-action" onclick="compartilharPost(${post.id})">Compartilhar (${post.shares || 0})</button>
+                </div>
+                <div class="comments-box" id="comments-${post.id}">
+                    ${commentsHtml || "Sem comentários ainda."}
+                </div>
+                <input class="comment-input" id="input-comment-${post.id}" placeholder="Escreva um comentário..." onkeypress="handleComment(event, ${post.id})">
+            </div>
+        `
+        feed.appendChild(div)
+    })
+    console.log("Posts Data Rendered:", postsData.map(p => ({ id: p.id, caption: p.caption })));
+    setTimeout(updateCenter,100)
+}
+
+async function compartilharPost(id) {
+    try {
+        // Incrementa o contador no backend
+        await fetch(`${API_BASE}/post/${id}/share`, { method: "POST" });
+        loadFeed(); // Recarrega para atualizar o número na tela
+
+        if (navigator.share) {
+            navigator.share({
+                title: 'My Clothesline - O Varal Digital',
+                text: 'Olha que legal o que eu vi no My Clothesline! 👔👗',
+                url: window.location.href
+            }).catch(err => console.error('Erro ao compartilhar', err));
+        } else {
+            alert("Compartilhado no My Clothesline! URL copiada para a área de transferência.");
+        }
+    } catch (e) {
+        console.error("Erro ao processar compartilhamento:", e);
+    }
+}
+
+function updateCenter(){
+    const posts=document.querySelectorAll(".post")
+    const screenCenter=window.innerWidth/2
+    posts.forEach(post=>{
+        const rect=post.getBoundingClientRect()
+        const postCenter=rect.left+rect.width/2
+        const distance=Math.abs(screenCenter-postCenter)
+        if(distance<160){
+            post.classList.add("center")
+        }else{
+            post.classList.remove("center")
+        }
+    })
+}
+
+feed.addEventListener("scroll",updateCenter)
+window.addEventListener("resize",updateCenter)
+
+// Adiciona suporte a scroll horizontal com a rodinha do mouse
+feed.addEventListener("wheel", (event) => {
+    event.preventDefault();
+    feed.scrollLeft += event.deltaY;
+}, { passive: false });
+
+document.getElementById("leftBtn").onclick=()=>{feed.scrollLeft-=310}
+document.getElementById("rightBtn").onclick=()=>{feed.scrollLeft+=310}
+document.getElementById("btnPendurarTopo").onclick=()=>{
+    document.getElementById("modalUpload").style.display="flex"
+}
+
+function fecharUpload(){
+    document.getElementById("modalUpload").style.display="none"
+}
+
+async function curtirPost(id) {
+    if (!id || typeof id !== 'number' || id > 1000000000000) return; // ignore temp ids
+    try {
+        await fetch(`${API_BASE}/post/${id}/like`, { method: "POST" });
+        loadFeed();
+    } catch(e) { console.error(e); }
+}
+
+function focarComentario(id) {
+    const input = document.getElementById(`input-comment-${id}`);
+    if (input) input.focus();
+}
+
+async function handleComment(event, id) {
+    if (event.key === "Enter") {
+        const text = event.target.value.trim();
+        if (!text) return;
+        event.target.value = "";
+
+        try {
+            await fetch(`${API_BASE}/post/${id}/comment`, {
+                method: "POST",
+                headers: { 
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
+                },
+                body: JSON.stringify({ text })
+            });
+            // Adicionamos o nome do autor localmente para o UI otimista
+            const author_name = currentUser.name;
+            const commentsBox = document.getElementById(`comments-${id}`);
+            if (commentsBox) {
+                if (commentsBox.innerHTML.includes("Sem comentários ainda")) {
+                    commentsBox.innerHTML = "";
+                }
+                const div = document.createElement("div");
+                div.style.cssText = "margin-bottom:4px;border-bottom:1px solid #eee;padding-bottom:2px;";
+                div.innerHTML = `<b>${author_name}:</b> ${text}`;
+                commentsBox.appendChild(div);
+                commentsBox.scrollTop = commentsBox.scrollHeight;
+            }
+        } catch(e) { console.error(e); }
+    }
+}
+
+async function pendurarPost(){
+    const file=document.getElementById("mediaFile").files[0]
+    const caption=document.getElementById("caption").value
+
+    if(!file){
+        alert("Escolha uma foto ou vídeo")
+        return
+    }
+
+    const url = URL.createObjectURL(file);
+    const tempId = Date.now();
+    postsData.push({
+        id: tempId,
+        url: url,
+        caption: caption,
+        comments: [],
+        likes: 0
+    });
+    renderFeed();
+    fecharUpload();
+
+    const formData = new FormData();
+    formData.append("media", file);
+    formData.append("caption", caption);
+
+    try {
+        const response = await fetch(`${API_BASE}/post`, {
+            method: "POST",
+            headers: {
+                "Authorization": `Bearer ${token}`
+            },
+            body: formData
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP Error: ${response.status}`);
+        }
+        
+        // Sucesso: Recarrega do banco real para ter o ID definitivo e imagem hospedada
+        await loadFeed();
+    } catch(e) {
+        alert("Erro ao enviar post: " + e.message);
+        console.error("Upload Error:", e);
+        // Remove o post otimista que falhou
+        postsData = postsData.filter(p => p.id !== tempId);
+        renderFeed();
+    }
+}
+
+checkAuth();
+loadFeed();
+updateOnlineStatus();
+updateUnreadCount();
+updateProfileStats();
+
+// Atualização Automática (Real-time) a cada 10 segundos
+setInterval(() => {
+    if (currentUser && token) {
+        if (viewingUserId) {
+            carregarFeedUsuarioDireto(viewingUserId);
+        } else {
+            loadFeed(true);
+        }
+        updateOnlineStatus();
+        updateUnreadCount();
+        updateProfileStats();
+        if (document.getElementById("modalMessages").style.display === "flex") {
+            carregarConversas();
+            if (currentChatUserId) carregarMensagens(true);
+        }
+    }
+}, 10000);
+
+async function filtrarUsuariosParaChat() {
+    const query = document.getElementById("userSearchInput").value.trim();
+    const resultsContainer = document.getElementById("searchResults");
+    
+    if (query.length === 0) {
+        resultsContainer.style.display = "none";
+        return;
+    }
+
+    try {
+        const res = await fetch(`${API_BASE}/users/search?q=${query}`);
+        const users = await res.json();
+        
+        if (users.length === 0) {
+            resultsContainer.innerHTML = `<div style="padding: 10px; color: #999; font-size: 13px;">Ninguém encontrado</div>`;
+        } else {
+            resultsContainer.innerHTML = users.map(u => `
+                <div class="search-result-item" onclick="selecionarUsuarioParaChat(${u.id}, '${u.name.replace(/'/g, "\\'")}')">
+                    <b>${u.name}</b> (@${u.username})
+                </div>
+            `).join("");
+        }
+        
+        resultsContainer.style.display = "block";
+    } catch (e) {
+        console.error("Erro na busca:", e);
+    }
+}
+
+function selecionarUsuarioParaChat(id, name) {
+    currentChatUserId = id;
+    document.getElementById("chatTitle").textContent = `Chat com ${name}`;
+    document.getElementById("searchResults").style.display = "none";
+    document.getElementById("userSearchInput").value = "";
+    document.getElementById("chatContainer").innerHTML = `<div style="text-align:center; color:#999; font-size:12px; padding:20px;">Carregando mensagens...</div>`;
+    carregarMensagens();
+}
+
+</script>
+
+</body>
+</html>
