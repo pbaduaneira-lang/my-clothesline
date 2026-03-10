@@ -459,6 +459,31 @@ app.post("/post/:id/comment", async (req, res) => {
   }
 });
 
+app.delete("/post/:id", async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(" ")[1];
+    if (!token) return res.status(401).json({ error: "Não autorizado" });
+
+    const decoded = jwt.verify(token, JWT_SECRET);
+    const userId = decoded.id;
+    const postId = req.params.id;
+
+    // Apenas o autor pode deletar
+    const postRes = await pool.query("SELECT author_id FROM posts WHERE id = $1", [postId]);
+    if (postRes.rows.length === 0) return res.status(404).json({ error: "Post não encontrado" });
+
+    if (postRes.rows[0].author_id !== userId) {
+      return res.status(403).json({ error: "Você só pode excluir suas próprias postagens" });
+    }
+
+    await pool.query("DELETE FROM posts WHERE id = $1", [postId]);
+    res.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Erro ao excluir post" });
+  }
+});
+
 /* SEGUIR USUÁRIOS */
 
 app.post("/follow/:id", async (req, res) => {

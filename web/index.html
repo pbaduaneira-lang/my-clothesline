@@ -1473,6 +1473,9 @@ function renderFeed(){
                     <button class="btn-action" onclick="curtirPost(${post.id})">Curtir (${post.likes || 0})</button>
                     <button class="btn-action" onclick="focarComentario(${post.id})">Comentar (${safeComments.length})</button>
                     <button class="btn-action" onclick="compartilharPost(${post.id})">Compartilhar (${post.shares || 0})</button>
+                    ${(currentUser && post.author_id === currentUser.id) ? `
+                        <button class="btn-action" style="color: #ff4444;" onclick="excluirPost(${post.id})">🗑️ Derrubar</button>
+                    ` : ''}
                 </div>
                 <div class="comments-box" id="comments-${post.id}">
                     ${commentsHtml || "Sem comentários ainda."}
@@ -1583,6 +1586,22 @@ async function handleComment(event, id) {
             }
         } catch(e) { console.error(e); }
     }
+}
+
+async function excluirPost(id) {
+    if (!confirm("Deseja realmente derrubar esta peça do varal?")) return;
+    try {
+        const res = await fetch(`${API_BASE}/post/${id}`, {
+            method: "DELETE",
+            headers: { "Authorization": `Bearer ${token}` }
+        });
+        if (res.ok) {
+            loadFeed();
+        } else {
+            const err = await res.json();
+            alert(err.error || "Erro ao excluir");
+        }
+    } catch (e) { console.error(e); }
 }
 
 async function pendurarPost(){
