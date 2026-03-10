@@ -1442,9 +1442,9 @@ function renderFeed(){
             </div>`
         ).join("")
 
-        // Se for do banco, usa o caminho /uploads/. Se for upload local (blob), usa direto.
+        // Se for Base64 (persistência BD) usa direto. Senão, assume que é arquivo antigo em /uploads/
         let mediaHtml = "";
-        let mediaUrl = post.url ? post.url : `/uploads/${post.media_url}`;
+        let mediaUrl = post.url ? post.url : (post.media_url.startsWith('data:') ? post.media_url : `/uploads/${post.media_url}`);
         
         if (post.type === "video") {
             mediaHtml = `<video class="media" controls src="${mediaUrl}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'"></video>`;

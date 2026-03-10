@@ -73,17 +73,8 @@ if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir, { recursive: true });
 }
 
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, uploadDir);
-  },
-  filename: function (req, file, cb) {
-    const uniqueName = Date.now() + path.extname(file.originalname);
-    cb(null, uniqueName);
-  },
-});
-
-const upload = multer({ storage });
+const storage = multer.memoryStorage();
+const upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024 } }); // Limite de 10MB
 
 // SERVIR ARQUIVOS DE UPLOAD
 app.use("/uploads", express.static(uploadDir));
@@ -382,7 +373,8 @@ app.post("/post", upload.single("media"), async (req, res) => {
       return res.status(400).json({ error: "Nenhum arquivo enviado" });
     }
     const caption = req.body.caption || "";
-    const media_url = req.file.filename;
+    const base64Data = req.file.buffer.toString("base64");
+    const media_url = `data:${req.file.mimetype};base64,${base64Data}`;
     const type = req.file.mimetype.startsWith("video") ? "video" : "image";
 
     const result = await pool.query(
