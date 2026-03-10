@@ -210,9 +210,10 @@ border-radius:2px;
 
 .actions{
 display:flex;
-justify-content:center;
-gap:15px;
-padding:12px 5px;
+justify-content:space-between;
+flex-wrap:wrap;
+gap:5px;
+padding:10px 5px;
 border-bottom:1px solid #f0f0f0;
 margin-bottom:8px;
 }
@@ -1471,9 +1472,9 @@ function renderFeed(){
                     </div>
                 </div>
                 <div class="actions">
-                    <button class="btn-action" onclick="curtirPost(${post.id})">❤️ Curtir (${post.likes || 0})</button>
-                    <button class="btn-action" onclick="focarComentario(${post.id})">💬 (${safeComments.length})</button>
-                    <button class="btn-action" onclick="compartilharPost(${post.id})">🔗 Compartilhar (${post.shares || 0})</button>
+                    <button class="btn-action" onclick="curtirPost(${post.id})">Curtir (${post.likes || 0})</button>
+                    <button class="btn-action" onclick="focarComentario(${post.id})">Comentar (${safeComments.length})</button>
+                    <button class="btn-action" onclick="compartilharPost(${post.id})">Compartilhar (${post.shares || 0})</button>
                 </div>
                 <div class="comments-box" id="comments-${post.id}">
                     ${commentsHtml || "Sem comentários ainda."}
