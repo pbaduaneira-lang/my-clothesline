@@ -1473,7 +1473,7 @@ function renderFeed(){
                 <div class="actions">
                     <button class="btn-action" onclick="curtirPost(${post.id})">❤️ Curtir (${post.likes || 0})</button>
                     <button class="btn-action" onclick="focarComentario(${post.id})">💬 (${safeComments.length})</button>
-                    <button class="btn-action" onclick="compartilharPost(${post.id})">🔗 Share (${post.shares || 0})</button>
+                    <button class="btn-action" onclick="compartilharPost(${post.id})">🔗 Compartilhar (${post.shares || 0})</button>
                 </div>
                 <div class="comments-box" id="comments-${post.id}">
                     ${commentsHtml || "Sem comentários ainda."}
