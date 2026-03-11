@@ -883,15 +883,17 @@ header {
         height: 100vh !important;
     }
     .topbar {
-        padding: 5px 10px !important;
+        padding: 4px 10px !important;
+        height: 40px !important;
         flex-direction: row !important;
-        flex-wrap: wrap !important;
         justify-content: space-between !important;
         align-items: center !important;
-        gap: 5px !important;
     }
     .logo h1 {
-        font-size: 20px !important;
+        font-size: 16px !important;
+    }
+    .logo div {
+        display: none !important; /* Esconde slogan no celular */
     }
     #userProfileHeader {
         padding: 2px 8px !important;
@@ -928,13 +930,12 @@ header {
         font-size: 11px !important;
     }
     #scene {
-        height: 200px !important; /* Mais compacto para dar espaço abaixo */
-        margin-top: 0;
+        height: 40vh !important; /* Parte Superior */
+        margin-top: 50px !important;
         align-items: flex-start;
         z-index: 2000 !important;
         position: relative;
         overflow: visible !important;
-        margin-bottom: 20px; /* Garante separação do quadro de destaque */
     }
     #feed {
         padding: 0 50px !important; /* Espaço para ver fotos nas laterais */
@@ -953,11 +954,12 @@ header {
     }
     #mobile-focus-area {
         display: flex !important;
-        height: 50vh !important; /* Puxado para baixo para não sobrepor o varal */
+        height: 50vh !important; /* Parte Inferior Exata */
         top: auto;
         bottom: 0;
         z-index: 500 !important;
-        padding-top: 40px !important; /* Espaço interno para afastar a foto da borda do quadro */
+        padding-top: 20px !important;
+        border-radius: 20px 20px 0 0 !important;
     }
     .scrollBtn {
         display: none !important;
