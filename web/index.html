@@ -1,8 +1,13 @@
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
-
-<style>
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Clothesline - Seu Varal Virtual</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
 :root {
     --primary: #1877f2;
     --primary-hover: #166fe5;
@@ -13,6 +18,7 @@
     --text-muted: #5a6c7d;
     --shadow-premium: 0 12px 40px rgba(0, 0, 0, 0.12);
     --font-outfit: 'Outfit', sans-serif;
+    --gradient-primary: linear-gradient(135deg, #1877f2 0%, #00d2ff 100%);
 }
 
 body {
@@ -43,15 +49,21 @@ header {
     max-width: 1400px;
     margin: 0 auto;
 }
-
 .logo h1 {
-    font-size: 20px;
+    font-size: 32px;
     margin: 0;
-    font-weight: 800;
-    background: linear-gradient(45deg, #1877f2, #00d2ff);
+    font-weight: 900;
+    background: var(--gradient-primary);
     -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    letter-spacing: -0.5px;
+    background-clip: text;
+    color: transparent;
+    letter-spacing: -1.5px;
+    text-shadow: 0 10px 30px rgba(24, 119, 242, 0.3);
+    cursor: default;
+}
+
+.logo img {
+    display: none;
 }
 
 .search-box {
@@ -161,12 +173,15 @@ header {
     display: flex;
     gap: 30px;
     overflow-x: auto;
-    padding: 0 5vw; /* Reduzido drásticamente para as fotos preencherem o monitor */
+    padding: 0 20px;
     height: 100%;
     align-items: flex-start;
-    justify-content: flex-start; /* Garante que os itens comecem da esquerda */
+    justify-content: flex-start;
     scroll-behavior: smooth;
     scrollbar-width: none;
+    width: 100%;
+    /* Garante que o último item fique perto da borda direita */
+    scroll-padding-right: 50px; 
 }
 
 #feed::-webkit-scrollbar {
@@ -195,10 +210,10 @@ header {
     100% { transform: rotate(1.5deg); }
 }
 
-.post.center {
-    transform: scale(1.15) rotate(0deg);
+.post.active {
     z-index: 100;
     animation-play-state: paused;
+    transform: none; /* Removendo a escala aumentada no PC a pedido do usuário */
 }
 
 /* GRAMPO */
@@ -239,7 +254,7 @@ header {
     transition: all 0.4s ease;
 }
 
-.post.center .photo-card {
+.post.active .photo-card {
     background: rgba(255, 255, 255, 0.9);
     box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
 }
@@ -815,68 +830,77 @@ header {
 }
 
 
+/* MODAL E UPLOAD */
+.modal {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(14, 26, 45, 0.4);
+    backdrop-filter: blur(8px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 5000;
+    padding: 20px;
+}
+
+.modal-content {
+    background: white;
+    padding: 30px;
+    border-radius: 24px;
+    width: 100%;
+    max-width: 450px;
+    box-shadow: var(--shadow-premium);
+    position: relative;
+    animation: zoomIn 0.3s ease;
+}
+
+.upload-box {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.upload-box h3 { margin: 0; font-weight: 800; }
+.upload-box input, .upload-box textarea {
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 12px;
+    font-family: inherit;
+    outline: none;
+}
+.upload-box button {
+    padding: 12px;
+    border-radius: 12px;
+    border: none;
+    cursor: pointer;
+    font-weight: 700;
+}
+
 /* RESPONSIVIDADE MOBILE */
 @media (max-width: 768px) {
-    header {
-        padding: 5px 10px;
+    body {
+        overflow-y: hidden !important;
+        height: 100vh !important;
     }
     .topbar {
         padding: 15px 10px !important;
         flex-direction: column;
         gap: 12px;
     }
-    .logo {
-        align-items: center;
-    }
-    .logo div:first-child {
-        font-size: 26px !important; /* Logo maior no mobile */
-        font-weight: 900;
-        background: var(--gradient-primary);
-        -webkit-background-clip: text;
-        background-clip: text;
-        color: transparent;
-    }
-    .logo div:last-child {
-        font-size: 11px !important;
-    }
-    .user-menu {
-        flex-wrap: wrap;
-        justify-content: center;
-        gap: 12px;
+    .logo h1 {
+        font-size: 28px !important;
     }
     .btn-pendurar {
-        padding: 12px 24px !important; /* Botão XL no mobile para execução fácil */
-        font-size: 14px !important;
-    }
-    .search-box {
-        width: 100% !important;
-        max-width: 300px !important;
-    }
-    #userProfileHeader {
-        margin-left: 0 !important;
-        justify-content: center;
-        background: rgba(255, 255, 255, 0.4);
-        border: 1px solid var(--glass-border);
+        padding: 14px 28px !important;
+        font-size: 15px !important;
     }
     .icon-btn {
-        width: 45px !important;
-        height: 45px !important;
-        font-size: 20px !important;
-    }
-    #btnLogout {
-        font-size: 13px !important;
-        padding: 8px 16px !important;
-    }
-}
-
-/* AJUSTE PARA GARANTIR VISIBILIDADE DO FEED E REMOVER SETAS DO CELULAR */
-@media (max-width: 768px) {
-    body {
-        overflow-y: hidden !important; /* Evita scroll da página toda, deixa o focus fixo */
-        height: 100vh !important;
+        width: 50px !important;
+        height: 50px !important;
+        font-size: 22px !important;
     }
     #scene {
-        height: 250px !important; /* Varal compacto no topo */
+        height: 250px !important;
         margin-top: 5px;
         align-items: flex-start;
     }
@@ -886,7 +910,7 @@ header {
         justify-content: flex-start !important;
     }
     .post {
-        min-width: 160px !important; /* Fotos no varal mobile */
+        min-width: 160px !important;
         max-width: 160px !important;
         padding-top: 25px !important;
     }
@@ -895,7 +919,7 @@ header {
     }
     #mobile-focus-area {
         display: flex !important;
-        height: calc(100vh - 420px); /* Ajustado para caber o cabeçalho XL */
+        height: calc(100vh - 430px) !important;
     }
     .scrollBtn {
         display: none !important;
@@ -909,19 +933,19 @@ header {
     bottom: 0;
     left: 0;
     right: 0;
-    height: calc(100vh - 430px);
-    background: rgba(255, 255, 255, 0.2);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border-top: 1px solid var(--glass-border);
+    height: 420px;
+    background: rgba(255, 255, 255, 0.4);
+    backdrop-filter: blur(25px);
+    -webkit-backdrop-filter: blur(25px);
+    border-top: 1px solid rgba(255, 255, 255, 0.5);
     z-index: 1000;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
-    padding: 20px;
-    border-radius: 30px 30px 0 0;
-    box-shadow: 0 -20px 50px rgba(0,0,0,0.1);
-    transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+    justify-content: flex-start;
+    padding: 24px 20px;
+    border-radius: 40px 40px 0 0;
+    box-shadow: 0 -20px 60px rgba(0,0,0,0.15);
+    transition: all 0.5s cubic-bezier(0.165, 0.84, 0.44, 1);
 }
 
 #mobile-focus-content {
@@ -930,10 +954,10 @@ header {
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
     opacity: 0;
-    transform: translateY(20px);
-    transition: all 0.4s ease;
+    transform: translateY(30px);
+    transition: all 0.6s cubic-bezier(0.23, 1, 0.32, 1);
 }
 
 #mobile-focus-content.active {
@@ -942,17 +966,21 @@ header {
 }
 
 #mobile-focus-content img, #mobile-focus-content video {
-    max-width: 100%;
-    max-height: 70%;
-    border-radius: 20px;
-    box-shadow: var(--shadow-premium);
-    object-fit: contain;
+    width: 65vw;
+    height: 65vw;
+    max-width: 250px;
+    max-height: 250px;
+    border-radius: 24px;
+    box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+    object-fit: cover;
+    margin-bottom: 20px;
+    border: 4px solid white;
 }
 
 .focus-info {
-    margin-top: 15px;
     text-align: center;
     color: var(--text-main);
+    width: 100%;
 }
 </style>
 </head>
@@ -962,8 +990,8 @@ header {
 <header>
     <div class="topbar">
         <div class="logo">
-            <div style="font-size: 24px; font-weight: 900; letter-spacing: -0.5px; background: var(--gradient-primary); -webkit-background-clip: text; background-clip: text; color: transparent;">My Clothesline</div>
-            <div style="font-size: 11px; font-weight: 600; opacity: 0.6; margin-top: -2px;">Meu Varal Virtual</div>
+            <h1>My Clothesline</h1>
+            <div style="font-size: 11px; font-weight: 600; opacity: 0.6; margin-top: -2px; color: var(--text-main);">Meu Varal Virtual</div>
         </div>
 
         <div id="userProfileHeader" style="display: flex; align-items: center; gap: 12px; cursor: pointer; padding: 4px 12px; border-radius: 20px; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,0,0,0.03)'" onmouseout="this.style.background='none'">
@@ -1111,22 +1139,16 @@ header {
     </div>
 </div>
 
-<div id="modalUpload">
-
-<div class="upload-box">
-
-<h3>Pendurar no varal</h3>
-
-<input type="file" id="mediaFile">
-
-<textarea id="caption" maxlength="100" placeholder="Escreva algo sobre isso... (máx. 2 linhas)" style="resize:none; padding:8px; height:50px; font-family: inherit;"></textarea>
-
-<button onclick="pendurarPost()">Pendurar</button>
-
-<button onclick="fecharUpload()">Cancelar</button>
-
-</div>
-
+<div id="modalUpload" class="modal">
+    <div class="modal-content">
+        <div class="upload-box">
+            <h3>Pendurar no varal</h3>
+            <input type="file" id="mediaFile">
+            <textarea id="caption" maxlength="100" placeholder="Escreva algo sobre isso... (máx. 2 linhas)" style="resize:none; padding:8px; height:50px; font-family: inherit;"></textarea>
+            <button onclick="pendurarPost()" style="background: var(--primary); color: white;">Pendurar</button>
+            <button onclick="fecharUpload()" style="background: #eee; color: #666;">Cancelar</button>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -1733,7 +1755,6 @@ function updateCenter() {
         const rect = p.getBoundingClientRect();
         const center = rect.left + rect.width / 2;
         const dist = Math.abs(containerWidth / 2 - center);
-        
         if (dist < 150) p.classList.add("active");
         else p.classList.remove("active");
 
@@ -1767,7 +1788,7 @@ function updateMobileFocus(post) {
                 <div style="font-size: 14px; opacity: 0.8;">${post.caption || ''}</div>
                 <div style="display: flex; gap: 15px; justify-content: center; margin-top: 10px;">
                     <button class="btn-action" style="background: white;" onclick="curtirPost(${post.id})">👍 ${post.likes || 0}</button>
-                    <button class="btn-action" style="background: white;" onclick="compartilharPost(${post.id})">🔄 ${post.shares || 0}</button>
+                    <button class="btn-action" style="background: white;" onclick="compartilharPost(${post.id})">🔄 ${Array.isArray(post.shares) ? post.shares.length : (post.shares || 0)}</button>
                 </div>
             </div>
         `;
@@ -1778,11 +1799,10 @@ function updateMobileFocus(post) {
 }
 
 async function compartilharPost(id) {
+    if (!id || typeof id !== 'number' || id > 1000000000000) return;
     try {
-        // Incrementa o contador no backend
         await fetch(`${API_BASE}/post/${id}/share`, { method: "POST" });
-        loadFeed(); // Recarrega para atualizar o número na tela
-
+        loadFeed();
         if (navigator.share) {
             navigator.share({
                 title: 'My Clothesline - O Varal Digital',
@@ -1790,49 +1810,13 @@ async function compartilharPost(id) {
                 url: window.location.href
             }).catch(err => console.error('Erro ao compartilhar', err));
         } else {
-            alert("Compartilhado no My Clothesline! URL copiada para a área de transferência.");
+            alert("Url de compartilhamento copiada com sucesso!");
         }
-    } catch (e) {
-        console.error("Erro ao processar compartilhamento:", e);
-    }
-}
-
-function updateCenter(){
-    const posts=document.querySelectorAll(".post")
-    const screenCenter=window.innerWidth/2
-    posts.forEach(post=>{
-        const rect=post.getBoundingClientRect()
-        const postCenter=rect.left+rect.width/2
-        const distance=Math.abs(screenCenter-postCenter)
-        if(distance<160){
-            post.classList.add("center")
-        }else{
-            post.classList.remove("center")
-        }
-    })
-}
-
-feed.addEventListener("scroll",updateCenter)
-window.addEventListener("resize",updateCenter)
-
-// Adiciona suporte a scroll horizontal com a rodinha do mouse
-feed.addEventListener("wheel", (event) => {
-    event.preventDefault();
-    feed.scrollLeft += event.deltaY;
-}, { passive: false });
-
-document.getElementById("leftBtn").onclick=()=>{feed.scrollLeft-=310}
-document.getElementById("rightBtn").onclick=()=>{feed.scrollLeft+=310}
-document.getElementById("btnPendurarTopo").onclick=()=>{
-    document.getElementById("modalUpload").style.display="flex"
-}
-
-function fecharUpload(){
-    document.getElementById("modalUpload").style.display="none"
+    } catch (e) { console.error("Erro ao compartilhar:", e); }
 }
 
 async function curtirPost(id) {
-    if (!id || typeof id !== 'number' || id > 1000000000000) return; // ignore temp ids
+    if (!id || typeof id !== 'number' || id > 1000000000000) return;
     try {
         await fetch(`${API_BASE}/post/${id}/like`, { method: "POST" });
         loadFeed();
@@ -1859,7 +1843,6 @@ async function handleComment(event, id) {
                 },
                 body: JSON.stringify({ text })
             });
-            // Adicionamos o nome do autor localmente para o UI otimista
             const author_name = currentUser.name;
             const commentsBox = document.getElementById(`comments-${id}`);
             if (commentsBox) {
@@ -1892,10 +1875,8 @@ async function excluirPost(id) {
     } catch (e) { console.error(e); }
 }
 
-// Comprime imagem usando Canvas antes de enviar ao servidor
 function comprimirImagem(file, maxSize, quality) {
     return new Promise((resolve) => {
-        // Se for vídeo, não comprime
         if (file.type.startsWith('video')) {
             resolve(file);
             return;
@@ -1907,7 +1888,6 @@ function comprimirImagem(file, maxSize, quality) {
                 const canvas = document.createElement('canvas');
                 let w = img.width;
                 let h = img.height;
-                // Redimensiona mantendo proporção
                 if (w > maxSize || h > maxSize) {
                     if (w > h) { h = Math.round(h * maxSize / w); w = maxSize; }
                     else { w = Math.round(w * maxSize / h); h = maxSize; }
@@ -1918,7 +1898,6 @@ function comprimirImagem(file, maxSize, quality) {
                 ctx.drawImage(img, 0, 0, w, h);
                 canvas.toBlob((blob) => {
                     const compressed = new File([blob], file.name, { type: 'image/jpeg' });
-                    console.log(`Imagem comprimida: ${(file.size/1024).toFixed(0)}KB -> ${(compressed.size/1024).toFixed(0)}KB`);
                     resolve(compressed);
                 }, 'image/jpeg', quality);
             };
@@ -1929,23 +1908,25 @@ function comprimirImagem(file, maxSize, quality) {
 }
 
 async function pendurarPost(){
-    const fileOriginal = document.getElementById("mediaFile").files[0]
-    const caption = document.getElementById("caption").value
-
+    const fileOriginal = document.getElementById("mediaFile").files[0];
+    const caption = document.getElementById("caption").value;
     if(!fileOriginal){
-        alert("Escolha uma foto ou vídeo")
-        return
+        alert("Escolha uma foto ou vídeo");
+        return;
     }
 
-    // Comprimir imagem para no máximo 800px e qualidade 60%
     const file = await comprimirImagem(fileOriginal, 800, 0.6);
-
     const url = URL.createObjectURL(file);
     const tempId = Date.now();
-    postsData.push({
+    
+    // Fallback seguro para o nome do autor
+    const authorName = (currentUser && currentUser.name) ? currentUser.name : "Eu";
+
+    postsData.unshift({
         id: tempId,
         url: url,
         caption: caption,
+        author_name: authorName,
         comments: [],
         likes: 0
     });
@@ -1959,66 +1940,31 @@ async function pendurarPost(){
     try {
         const response = await fetch(`${API_BASE}/post`, {
             method: "POST",
-            headers: {
-                "Authorization": `Bearer ${token}`
-            },
+            headers: { "Authorization": `Bearer ${token}` },
             body: formData
         });
-        
         if (!response.ok) {
             const errData = await response.json().catch(() => ({}));
-            const msg = errData.details || errData.error || `Erro ${response.status}`;
-            throw new Error(msg);
+            throw new Error(errData.error || "Erro no upload");
         }
-        
-        // Sucesso: Recarrega do banco real para ter o ID definitivo e imagem hospedada
         await loadFeed();
     } catch(e) {
-        alert("Erro ao enviar post: " + e.message);
-        console.error("Upload Error:", e);
-        // Remove o post otimista que falhou
+        console.error("Erro no upload final:", e);
         postsData = postsData.filter(p => p.id !== tempId);
         renderFeed();
     }
 }
 
-checkAuth();
-loadFeed();
-updateOnlineStatus();
-updateUnreadCount();
-updateProfileStats();
-
-// Atualização Automática (Real-time) a cada 10 segundos
-setInterval(() => {
-    if (currentUser && token) {
-        if (viewingUserId) {
-            carregarFeedUsuarioDireto(viewingUserId);
-        } else {
-            loadFeed(true);
-        }
-        updateOnlineStatus();
-        updateUnreadCount();
-        updateProfileStats();
-        if (document.getElementById("modalMessages").style.display === "flex") {
-            carregarConversas();
-            if (currentChatUserId) carregarMensagens(true);
-        }
-    }
-}, 10000);
-
 async function filtrarUsuariosParaChat() {
     const query = document.getElementById("userSearchInput").value.trim();
     const resultsContainer = document.getElementById("searchResults");
-    
     if (query.length === 0) {
         resultsContainer.style.display = "none";
         return;
     }
-
     try {
         const res = await fetch(`${API_BASE}/users/search?q=${query}`);
         const users = await res.json();
-        
         if (users.length === 0) {
             resultsContainer.innerHTML = `<div style="padding: 10px; color: #999; font-size: 13px;">Ninguém encontrado</div>`;
         } else {
@@ -2028,11 +1974,8 @@ async function filtrarUsuariosParaChat() {
                 </div>
             `).join("");
         }
-        
         resultsContainer.style.display = "block";
-    } catch (e) {
-        console.error("Erro na busca:", e);
-    }
+    } catch (e) { console.error("Erro na busca:", e); }
 }
 
 function selecionarUsuarioParaChat(id, name) {
@@ -2044,10 +1987,37 @@ function selecionarUsuarioParaChat(id, name) {
     carregarMensagens();
 }
 
+function fecharUpload() {
+    document.getElementById("modalUpload").style.display = "none";
+}
+
+function abrirUpload() {
+    document.getElementById("modalUpload").style.display = "flex";
+}
+
+// Inicialização e Listeners
+checkAuth();
+loadFeed();
+updateOnlineStatus();
+updateUnreadCount();
+updateProfileStats();
+
 feed.addEventListener("scroll", updateCenter);
 window.addEventListener("resize", updateCenter);
+feed.addEventListener("wheel", (e) => { e.preventDefault(); feed.scrollLeft += e.deltaY; }, { passive: false });
+document.getElementById("leftBtn").onclick = () => { feed.scrollLeft -= 310; };
+document.getElementById("rightBtn").onclick = () => { feed.scrollLeft += 310; };
+
+setInterval(() => {
+    if (currentUser && token) {
+        if (viewingUserId) carregarFeedUsuarioDireto(viewingUserId);
+        else loadFeed(true);
+        updateOnlineStatus();
+        updateUnreadCount();
+        updateProfileStats();
+    }
+}, 10000);
 
 </script>
-
 </body>
 </html>
