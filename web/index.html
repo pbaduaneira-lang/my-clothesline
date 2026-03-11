@@ -159,9 +159,9 @@ header {
     position: relative;
     z-index: 2;
     display: flex;
-    gap: 70px;
+    gap: 30px; /* Reduzi o gap para as fotos ficarem mais próximas no PC */
     overflow-x: auto;
-    padding: 0 50vw;
+    padding: 0 40px; /* Removido o recuo de 50vw para as fotos preencherem a lateral */
     height: 100%;
     align-items: flex-start;
     scroll-behavior: smooth;
@@ -875,12 +875,15 @@ header {
         height: 550px !important;
     }
     #feed {
-        padding: 0 10vw !important;
-        gap: 30px;
+        padding: 0 10px !important;
+        gap: 15px;
     }
     .post {
-        min-width: 80vw !important; /* Aumentado no celular */
-        max-width: 80vw !important;
+        min-width: 95vw !important; /* Zoom máximo no celular */
+        max-width: 95vw !important;
+    }
+    #scene {
+        height: 600px !important; /* Aumentado para fotos maiores caberem */
     }
     .scrollBtn {
         display: none !important;
