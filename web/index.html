@@ -928,12 +928,13 @@ header {
         font-size: 11px !important;
     }
     #scene {
-        height: 220px !important; /* Mais baixo para o varal respirar */
+        height: 200px !important; /* Mais compacto para dar espaço abaixo */
         margin-top: 0;
         align-items: flex-start;
         z-index: 2000 !important;
         position: relative;
         overflow: visible !important;
+        margin-bottom: 20px; /* Garante separação do quadro de destaque */
     }
     #feed {
         padding: 0 50px !important; /* Espaço para ver fotos nas laterais */
@@ -952,10 +953,11 @@ header {
     }
     #mobile-focus-area {
         display: flex !important;
-        height: 55vh !important; /* Reduzido para não engolir o Feed */
+        height: 50vh !important; /* Puxado para baixo para não sobrepor o varal */
         top: auto;
         bottom: 0;
         z-index: 500 !important;
+        padding-top: 40px !important; /* Espaço interno para afastar a foto da borda do quadro */
     }
     .scrollBtn {
         display: none !important;
