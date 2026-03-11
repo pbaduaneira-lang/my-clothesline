@@ -394,17 +394,17 @@ app.post("/post", upload.single("media"), async (req, res) => {
     const type = req.file.mimetype.startsWith("video") ? "video" : "image";
 
     // Upload para o Supabase Storage
-    console.log(`[Upload] Iniciando envio da foto ${filePath} para o Supabase (via stream de disco)...`);
+    console.log(`[Upload] Iniciando envio da foto ${filePath} para o Supabase (tamanho: ${req.file.size} bytes)...`);
     
-    const fileStream = fs.createReadStream(req.file.path);
+    // Ler arquivo do disco (seguro pois imagens são comprimidas no frontend ~100-200KB)
+    const fileBuffer = fs.readFileSync(req.file.path);
 
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from("clothesline-uploads")
-      .upload(filePath, fileStream, {
+      .upload(filePath, fileBuffer, {
         contentType: req.file.mimetype,
         upsert: true,
-        cacheControl: '3600',
-        duplex: 'half'
+        cacheControl: '3600'
       });
 
     // Limpar o arquivo temporário do disco

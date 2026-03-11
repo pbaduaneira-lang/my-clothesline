@@ -1615,14 +1615,53 @@ async function excluirPost(id) {
     } catch (e) { console.error(e); }
 }
 
-async function pendurarPost(){
-    const file=document.getElementById("mediaFile").files[0]
-    const caption=document.getElementById("caption").value
+// Comprime imagem usando Canvas antes de enviar ao servidor
+function comprimirImagem(file, maxSize, quality) {
+    return new Promise((resolve) => {
+        // Se for vídeo, não comprime
+        if (file.type.startsWith('video')) {
+            resolve(file);
+            return;
+        }
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const img = new Image();
+            img.onload = function() {
+                const canvas = document.createElement('canvas');
+                let w = img.width;
+                let h = img.height;
+                // Redimensiona mantendo proporção
+                if (w > maxSize || h > maxSize) {
+                    if (w > h) { h = Math.round(h * maxSize / w); w = maxSize; }
+                    else { w = Math.round(w * maxSize / h); h = maxSize; }
+                }
+                canvas.width = w;
+                canvas.height = h;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, w, h);
+                canvas.toBlob((blob) => {
+                    const compressed = new File([blob], file.name, { type: 'image/jpeg' });
+                    console.log(`Imagem comprimida: ${(file.size/1024).toFixed(0)}KB -> ${(compressed.size/1024).toFixed(0)}KB`);
+                    resolve(compressed);
+                }, 'image/jpeg', quality);
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    });
+}
 
-    if(!file){
+async function pendurarPost(){
+    const fileOriginal = document.getElementById("mediaFile").files[0]
+    const caption = document.getElementById("caption").value
+
+    if(!fileOriginal){
         alert("Escolha uma foto ou vídeo")
         return
     }
+
+    // Comprimir imagem para no máximo 800px e qualidade 60%
+    const file = await comprimirImagem(fileOriginal, 800, 0.6);
 
     const url = URL.createObjectURL(file);
     const tempId = Date.now();
