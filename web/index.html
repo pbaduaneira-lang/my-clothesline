@@ -821,101 +821,84 @@ header {
         padding: 5px 10px;
     }
     .topbar {
+        padding: 15px 10px !important;
         flex-direction: column;
-        gap: 10px;
+        gap: 12px;
     }
     .logo {
         align-items: center;
     }
     .logo div:first-child {
-        font-size: 20px !important;
+        font-size: 26px !important; /* Logo maior no mobile */
+        font-weight: 900;
+        background: var(--gradient-primary);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
     }
     .logo div:last-child {
-        font-size: 12px !important;
+        font-size: 11px !important;
     }
     .user-menu {
         flex-wrap: wrap;
         justify-content: center;
-        gap: 8px;
+        gap: 12px;
     }
     .btn-pendurar {
-        padding: 6px 10px !important;
-        font-size: 11px !important;
+        padding: 12px 24px !important; /* Botão XL no mobile para execução fácil */
+        font-size: 14px !important;
     }
     .search-box {
         width: 100% !important;
-        max-width: 250px !important;
+        max-width: 300px !important;
     }
     #userProfileHeader {
         margin-left: 0 !important;
         justify-content: center;
+        background: rgba(255, 255, 255, 0.4);
+        border: 1px solid var(--glass-border);
     }
     .icon-btn {
-        width: 30px !important;
-        height: 30px !important;
-        font-size: 14px !important;
+        width: 45px !important;
+        height: 45px !important;
+        font-size: 20px !important;
     }
     #btnLogout {
-        font-size: 11px !important;
-        padding: 4px 8px !important;
-    }
-    .topbar > div {
-        width: 100%;
-        display: flex;
-        justify-content: center;
+        font-size: 13px !important;
+        padding: 8px 16px !important;
     }
 }
 
 /* AJUSTE PARA GARANTIR VISIBILIDADE DO FEED E REMOVER SETAS DO CELULAR */
 @media (max-width: 768px) {
     body {
-        overflow-y: auto !important;
-        height: auto !important;
+        overflow-y: hidden !important; /* Evita scroll da página toda, deixa o focus fixo */
+        height: 100vh !important;
     }
     #scene {
-        height: 550px !important;
-    }
-    #feed {
-        padding: 0 10px !important;
-        gap: 15px;
-        justify-content: flex-start !important;
-    }
-    .post {
-        min-width: 95vw !important; /* Zoom máximo no celular */
-        max-width: 95vw !important;
-        padding-top: 40px !important; /* Mais perto da corda no mobile */
-    }
-    #scene {
-        height: 650px !important; /* Mais altura para ver a foto grande */
-    }
-    .scrollBtn {
-        display: none !important;
-    }
-    .topbar {
-        padding: 20px 15px !important;
-        flex-direction: column;
-        gap: 20px;
-    }
-    .logo img {
-        height: 70px !important; /* Logo maior no mobile */
-    }
-    #feed {
-        padding: 0 10px !important;
-        gap: 15px;
-        justify-content: flex-start !important;
-    }
-    .post {
-        min-width: 180px !important; /* Fotos menores no varal superior mobile */
-        max-width: 180px !important;
-        padding-top: 20px !important;
-    }
-    #scene {
-        height: 280px !important; /* Varal compacto no topo */
-        margin-top: 10px;
+        height: 250px !important; /* Varal compacto no topo */
+        margin-top: 5px;
         align-items: flex-start;
+    }
+    #feed {
+        padding: 0 10px !important;
+        gap: 20px;
+        justify-content: flex-start !important;
+    }
+    .post {
+        min-width: 160px !important; /* Fotos no varal mobile */
+        max-width: 160px !important;
+        padding-top: 25px !important;
+    }
+    .photo-card {
+        padding: 8px !important;
     }
     #mobile-focus-area {
         display: flex !important;
+        height: calc(100vh - 420px); /* Ajustado para caber o cabeçalho XL */
+    }
+    .scrollBtn {
+        display: none !important;
     }
 }
 
@@ -979,7 +962,7 @@ header {
 <header>
     <div class="topbar">
         <div class="logo">
-            <img src="/logo.png?v=2" alt="My Clothesline" style="height: 60px; min-width: 50px; cursor: pointer; display: block; object-fit: contain;" onerror="this.onerror=null; this.outerHTML='<h1 style=\'margin:0\'>My Clothesline</h1>'">
+            <div style="font-size: 24px; font-weight: 900; letter-spacing: -0.5px; background: var(--gradient-primary); -webkit-background-clip: text; background-clip: text; color: transparent;">My Clothesline</div>
             <div style="font-size: 11px; font-weight: 600; opacity: 0.6; margin-top: -2px;">Meu Varal Virtual</div>
         </div>
 
@@ -1641,6 +1624,14 @@ window.addEventListener("keydown", (e) => {
     if (e.key === "Escape") fecharZoom();
 });
 
+function abrirUpload() {
+    document.getElementById("modalUpload").style.display = "flex";
+}
+
+function fecharUpload() {
+    document.getElementById("modalUpload").style.display = "none";
+}
+
 function renderFeed(){
     feed.innerHTML="";
     
@@ -1727,7 +1718,8 @@ function renderFeed(){
         feed.appendChild(div)
     })
     console.log("Posts Data Rendered:", postsData.map(p => ({ id: p.id, caption: p.caption })));
-// Função para atualizar o centro e o foco mobile
+    setTimeout(updateCenter, 200); // Garante que o foco seja preenchido logo após renderizar
+}
 let lastFocusedPostId = null;
 
 function updateCenter() {
@@ -1760,6 +1752,7 @@ function updateCenter() {
 
 function updateMobileFocus(post) {
     const content = document.getElementById("mobile-focus-content");
+    if (!content || !post) return;
     content.classList.remove("active");
     
     setTimeout(() => {
@@ -2050,6 +2043,9 @@ function selecionarUsuarioParaChat(id, name) {
     document.getElementById("chatContainer").innerHTML = `<div style="text-align:center; color:#999; font-size:12px; padding:20px;">Carregando mensagens...</div>`;
     carregarMensagens();
 }
+
+feed.addEventListener("scroll", updateCenter);
+window.addEventListener("resize", updateCenter);
 
 </script>
 
