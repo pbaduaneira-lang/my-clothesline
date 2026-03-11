@@ -6,8 +6,12 @@ const fs = require("fs");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const pool = require("./db");
+const { createClient } = require("@supabase/supabase-js");
 
 const JWT_SECRET = process.env.JWT_SECRET || "sua_chave_secreta_aqui";
+const SUPABASE_URL = process.env.SUPABASE_URL || "https://dykndppibbsklpyracuj.supabase.co";
+const SUPABASE_KEY = process.env.SUPABASE_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR5a25kcHBpYmJza2xweXJhY3VqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyMzEwODgsImV4cCI6MjA4ODgwNzA4OH0.bleEzBwG4kaOY8ELBgsomvd-qDNPs8bmgAaDA-Q9nCM";
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const app = express();
 app.use(cors());
@@ -373,9 +377,39 @@ app.post("/post", upload.single("media"), async (req, res) => {
       return res.status(400).json({ error: "Nenhum arquivo enviado" });
     }
     const caption = req.body.caption || "";
-    const base64Data = req.file.buffer.toString("base64");
-    const media_url = `data:${req.file.mimetype};base64,${base64Data}`;
+    
+    // Configurações do arquivo
+    const fileExt = req.file.mimetype.split("/")[1];
+    const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+    const filePath = `${author_id}/${fileName}`;
     const type = req.file.mimetype.startsWith("video") ? "video" : "image";
+
+    // Upload para o Supabase Storage (Bucket: clothesline-uploads)
+    console.log(`[Upload] Iniciando envio da foto ${filePath} para o Supabase...`);
+    
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from("clothesline-uploads")
+      .upload(filePath, req.file.buffer, {
+        contentType: req.file.mimetype,
+        upsert: false
+      });
+
+    // Limpar o buffer da memória manualmente do Node.js para não explodir RAM
+    req.file.buffer = null;
+
+    if (uploadError) {
+      console.error("[ERRO CRÍTICO SUPABASE]:", JSON.stringify(uploadError, null, 2));
+      return res.status(502).json({ error: "Erro Supabase Storage", details: uploadError.message });
+    }
+
+    console.log(`[Upload] Sucesso! Pegando URL pública...`);
+    // Gerar URL pública da imagem
+    const { data: publicUrlData } = supabase.storage
+      .from("clothesline-uploads")
+      .getPublicUrl(filePath);
+
+    const media_url = publicUrlData.publicUrl;
+    console.log(`[Upload] URL Gerada: ${media_url}`);
 
     const result = await pool.query(
       "INSERT INTO posts (user_id, media_url, type, caption, author_id, created_at, expires_at) VALUES ($1,$2,$3,$4,$5,NOW(), NOW() + INTERVAL '48 hours') RETURNING *",
@@ -384,8 +418,8 @@ app.post("/post", upload.single("media"), async (req, res) => {
 
     res.json(result.rows[0]);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Erro ao criar post" });
+    console.error("[ERRO GERAL NO POST]:", err);
+    res.status(500).json({ error: "Erro no servidor ao criar post" });
   }
 });
 

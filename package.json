@@ -8,6 +8,7 @@
     "install-server": "cd server && npm install"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.99.1",
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.6",
     "express": "^5.2.1",

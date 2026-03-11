@@ -728,7 +728,7 @@ cursor: pointer;
     }
 }
 
-/* AJUSTE PARA GARANTIR VISIBILIDADE DO FEED */
+/* AJUSTE PARA GARANTIR VISIBILIDADE DO FEED E REMOVER SETAS DO CELULAR */
 @media (max-width: 768px) {
     body {
         overflow-y: auto !important;
@@ -739,6 +739,9 @@ cursor: pointer;
     }
     #feed {
         padding: 0 10vw !important; /* Diminui o recuo inicial no celular para a foto aparecer logo */
+    }
+    .scrollBtn {
+        display: none !important; /* Remove setas no mobile liberando espaço */
     }
 }
 </style>
