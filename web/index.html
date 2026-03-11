@@ -1650,7 +1650,9 @@ async function pendurarPost(){
         });
         
         if (!response.ok) {
-            throw new Error(`HTTP Error: ${response.status}`);
+            const errData = await response.json().catch(() => ({}));
+            const msg = errData.details || errData.error || `Erro ${response.status}`;
+            throw new Error(msg);
         }
         
         // Sucesso: Recarrega do banco real para ter o ID definitivo e imagem hospedada
