@@ -175,8 +175,8 @@ header {
 /* ANIMAÇÃO DE BALANÇO FÍSICO */
 .post {
     position: relative;
-    min-width: 280px;
-    max-width: 280px;
+    min-width: 230px; /* Reduzido no PC para caberem mais */
+    max-width: 230px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -872,13 +872,25 @@ header {
         height: auto !important;
     }
     #scene {
-        height: 550px !important; /* Diminui um pouco para caber no visor */
+        height: 550px !important;
     }
     #feed {
-        padding: 0 10vw !important; /* Diminui o recuo inicial no celular para a foto aparecer logo */
+        padding: 0 10vw !important;
+        gap: 30px;
+    }
+    .post {
+        min-width: 80vw !important; /* Aumentado no celular */
+        max-width: 80vw !important;
     }
     .scrollBtn {
-        display: none !important; /* Remove setas no mobile liberando espaço */
+        display: none !important;
+    }
+    .topbar {
+        flex-direction: column;
+        gap: 15px;
+    }
+    .search-box {
+        width: 100% !important;
     }
 }
 </style>
@@ -889,14 +901,29 @@ header {
 <header>
     <div class="topbar">
         <div class="logo">
-            <h1>My Clothesline</h1>
-            <div style="font-size: 11px; font-weight: 600; opacity: 0.6; margin-top: -4px;">Meu Varal Virtual</div>
+            <img src="logo.png" alt="My Clothesline" style="height: 50px; cursor: pointer; display: block;" onerror="this.onerror=null; this.outerHTML='<h1>My Clothesline</h1>'">
+            <div style="font-size: 11px; font-weight: 600; opacity: 0.6; margin-top: -2px;">Meu Varal Virtual</div>
         </div>
 
-        <div style="position: relative; flex: 1; max-width: 400px; margin: 0 40px;">
+        <div id="userProfileHeader" style="display: flex; align-items: center; gap: 12px; cursor: pointer; padding: 4px 12px; border-radius: 20px; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,0,0,0.03)'" onmouseout="this.style.background='none'">
+            <div class="user-avatar" id="userInitial">?</div>
+            <div style="display: flex; flex-direction: column;">
+                <span id="userNameHeader" style="font-size: 14px; font-weight: 700; line-height: 1.2;"></span>
+                <div style="display: flex; gap: 6px;">
+                    <button onclick="abrirSeguidores()" style="background: none; border: none; font-size: 10px; color: var(--primary); font-weight: 600; padding: 0; cursor: pointer;">
+                        <span id="followerCount">0</span> seguidores
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <button class="btn-pendurar" id="btnPendurarTopo" onclick="abrirUpload()">
+            <span>➕</span> Pendurar
+        </button>
+
+        <div style="position: relative; flex: 1; max-width: 400px; margin: 0 20px;">
             <input type="text" class="search-box" style="width: 100%;" id="globalSearchInput" placeholder="🔍 Buscar pessoas ou fotos..." oninput="buscarUsuariosGlobal()">
             <div id="searchResultsGlobal" class="search-results-box" style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: white; border-radius: 12px; box-shadow: var(--shadow-premium); z-index: 2000; margin-top: 10px; max-height: 400px; overflow-y: auto;"></div>
-            <div id="profileStatusBanner" style="display:none; text-align:center; font-size:11px; color:#1877f2; font-weight:bold; margin-top:3px; position:absolute; width:100%; top:100%;"></div>
         </div>
 
         <div class="user-menu">
@@ -914,24 +941,8 @@ header {
                     </div>
                 </div>
             </div>
-            
-            <div id="userProfileHeader" style="display: flex; align-items: center; gap: 12px; cursor: pointer; padding: 4px 12px; border-radius: 20px; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,0,0,0.03)'" onmouseout="this.style.background='none'">
-                <div class="user-avatar" id="userInitial">?</div>
-                <div style="display: flex; flex-direction: column;">
-                    <span id="userNameHeader" style="font-size: 14px; font-weight: 700; line-height: 1.2;"></span>
-                    <div style="display: flex; gap: 6px;">
-                        <button onclick="abrirSeguidores()" style="background: none; border: none; font-size: 10px; color: var(--primary); font-weight: 600; padding: 0; cursor: pointer;">
-                            <span id="followerCount">0</span> seguidores
-                        </button>
-                        <button id="btnVoltarFeed" onclick="voltarParaVaralGlobal()" style="display: none; background: #ff5252; border: none; font-size: 9px; padding: 2px 6px; border-radius: 4px; cursor: pointer; color: white; font-weight: 700;">
-                            Sair do Perfil
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <button class="btn-pendurar" id="btnPendurarTopo" onclick="abrirUpload()">
-                <span>➕</span> Pendurar
+            <button id="btnVoltarFeed" onclick="voltarParaVaralGlobal()" style="display: none; background: #ff5252; border: none; font-size: 9px; padding: 6px 12px; border-radius: 8px; cursor: pointer; color: white; font-weight: 700; margin-right: 5px;">
+                Sair do Perfil
             </button>
             <button id="btnLogout" onclick="logout()" title="Sair" style="background: rgba(255, 68, 68, 0.1); border: none; color: #ff4444; padding: 10px 16px; border-radius: 12px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: var(--font-outfit); transition: background 0.2s;" onmouseover="this.style.background='rgba(255, 68, 68, 0.2)'" onmouseout="this.style.background='rgba(255, 68, 68, 0.1)'">Sair</button>
         </div>
@@ -1593,29 +1604,28 @@ function renderFeed(){
         div.innerHTML=`
             <div class="clamp"></div>
             <div class="photo-card">
-                <div style="font-size: 11px; color: #666; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; gap: 8px;">
-                    <div style="flex: 1; word-break: break-word; line-height: 1.2; font-weight: 500;">
-                        ${post.shared_from_id ? '🔄' : '📌'} ${post.author_name || "Desconhecido"}
+                <div style="font-size: 11px; color: #666; margin-bottom: 8px; display: flex; align-items: center; gap: 8px;">
+                    <div style="word-break: break-word; line-height: 1.2; font-weight: 600; color: var(--text-main);">
+                        ${post.author_name || "Desconhecido"}
                     </div>
-                    <div style="display: flex; gap: 4px; align-items: center; flex-shrink: 0;">
+                    ${(currentUser && post.author_id != currentUser.id) ? `
+                        <button onclick="${post.is_followed ? `pararDeSeguir(${post.author_id})` : `seguirUsuario(${post.author_id})`}" style="background: ${post.is_followed ? 'rgba(0,0,0,0.05)' : 'rgba(24, 119, 242, 0.1)'}; border: none; color: ${post.is_followed ? '#888' : '#1877f2'}; font-size: 10px; padding: 4px 8px; border-radius: 12px; cursor: pointer; white-space: nowrap; font-weight: 700; font-family: var(--font-outfit); transition: all 0.2; display: flex; align-items: center;">
+                            ${post.is_followed ? 'Seguindo' : '+ Seguir'}
+                        </button>
+                    ` : ''}
+                    <div style="margin-left: auto; display: flex; align-items: center;">
                         ${(currentUser && post.author_id == currentUser.id) ? `
                             <button onclick="excluirPost(${post.id})" style="background: none; border: none; color: #ff4444; font-size: 11px; cursor: pointer; display: flex; align-items: center; gap: 3px; padding: 4px; border-radius: 6px; transition: background 0.2s;" title="Derrubar do varal" onmouseover="this.style.background='rgba(255,68,68,0.1)'" onmouseout="this.style.background='none'">
-                                🗑️ <span style="font-size: 10px; font-weight: 600;">tirar</span>
-                            </button>
-                        ` : ''}
-                        ${(currentUser && post.author_id != currentUser.id) ? `
-                            <button onclick="${post.is_followed ? `pararDeSeguir(${post.author_id})` : `seguirUsuario(${post.author_id})`}" style="background: ${post.is_followed ? 'rgba(0,0,0,0.05)' : 'rgba(24, 119, 242, 0.1)'}; border: none; color: ${post.is_followed ? '#888' : '#1877f2'}; font-size: 10px; padding: 4px 8px; border-radius: 12px; cursor: pointer; white-space: nowrap; font-weight: 600; font-family: var(--font-outfit); transition: all 0.2s;">
-                                ${post.is_followed ? 'Seguindo' : '+ Seguir'}
+                                🗑️
                             </button>
                         ` : ''}
                     </div>
                 </div>
-                ${post.caption && post.caption.trim() !== "" ? `<div class="photo-title">${post.caption}</div>` : ""}
-                <div class="media-container">
+                ${post.caption && post.caption.trim() !== "" ? `<div class="photo-title" style="text-align: left; margin-top: -4px; margin-bottom: 10px; font-size: 13px;">${post.caption}</div>` : ""}
+                <div class="media-container" style="height: ${window.innerWidth < 768 ? '250px' : '180px'};">
                     ${mediaHtml}
                     <div style="display: none; flex-direction: column; align-items: center; color: #999; font-size: 11px; font-weight: 500;">
                         <span>⚠️ Mídia não encontrada</span>
-                        <span style="font-size: 9px; opacity: 0.7;">(Pode ter expirado)</span>
                     </div>
                 </div>
                 <div class="actions">
