@@ -391,7 +391,8 @@ app.post("/post", upload.single("media"), async (req, res) => {
       .from("clothesline-uploads")
       .upload(filePath, req.file.buffer, {
         contentType: req.file.mimetype,
-        upsert: false
+        upsert: true,
+        cacheControl: '3600'
       });
 
     // Limpar o buffer da memória manualmente do Node.js para não explodir RAM
