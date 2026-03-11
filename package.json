@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "Rede Social My Clothesline",
   "main": "server/server.js",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "scripts": {
     "start": "node server/server.js",
     "install-server": "cd server && npm install"
