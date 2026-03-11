@@ -61,6 +61,8 @@ async function initDB() {
           followed_id INTEGER REFERENCES users(id),
           PRIMARY KEY (follower_id, followed_id)
       );
+      -- Garantir que a coluna expires_at existe (Migração Automática)
+      ALTER TABLE posts ADD COLUMN IF NOT EXISTS expires_at TIMESTAMP;
     `);
     console.log("Banco de dados inicializado com sucesso!");
   } catch (err) {
@@ -412,6 +414,8 @@ app.post("/post", upload.single("media"), async (req, res) => {
 
     if (uploadError) {
       console.error("[ERRO CRÍTICO SUPABASE]:", JSON.stringify(uploadError, null, 2));
+      // Cleanup do arquivo local em caso de erro no Supabase
+      fs.unlink(req.file.path, () => {});
       return res.status(502).json({ error: "Erro Supabase Storage", details: uploadError.message });
     }
 
@@ -421,6 +425,11 @@ app.post("/post", upload.single("media"), async (req, res) => {
       .from("clothesline-uploads")
       .getPublicUrl(filePath);
 
+    if (!publicUrlData) {
+        fs.unlink(req.file.path, () => {});
+        throw new Error("Falha ao gerar URL pública do Supabase");
+    }
+
     const media_url = publicUrlData.publicUrl;
     console.log(`[Upload] URL Gerada: ${media_url}`);
 
@@ -429,10 +438,23 @@ app.post("/post", upload.single("media"), async (req, res) => {
       [author_id, media_url, type, caption, author_id]
     );
 
+    // Limpar o arquivo temporário do disco após sucesso total
+    fs.unlink(req.file.path, (err) => {
+      if (err) console.error("Aviso: arquivo temp não pode ser deletado:", err);
+    });
+
     res.json(result.rows[0]);
   } catch (err) {
     console.error("[ERRO GERAL NO POST]:", err);
-    res.status(500).json({ error: "Erro no servidor ao criar post" });
+    // Tenta limpar o arquivo se algo der errado no catch
+    if (req.file && req.file.path) {
+        fs.unlink(req.file.path, () => {});
+    }
+    res.status(500).json({ 
+        error: "Erro no servidor ao criar post", 
+        details: err.message,
+        stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+    });
   }
 });
 
@@ -591,7 +613,7 @@ app.get("/feed", async (req, res) => {
       LEFT JOIN follows f ON f.followed_id = p.author_id AND f.follower_id = $1
       LEFT JOIN comments c ON c.post_id = p.id
       LEFT JOIN users cu ON c.author_id = cu.id
-      WHERE p.expires_at > NOW()
+      WHERE (p.expires_at > NOW() OR p.expires_at IS NULL)
       GROUP BY p.id, u.name, f.follower_id
       ORDER BY is_followed DESC, p.created_at ASC
     `, [userId]);
@@ -630,7 +652,7 @@ app.get("/feed/user/:id", async (req, res) => {
       LEFT JOIN follows f ON f.followed_id = p.author_id AND f.follower_id = $1
       LEFT JOIN comments c ON c.post_id = p.id
       LEFT JOIN users cu ON c.author_id = cu.id
-      WHERE p.author_id = $2 AND p.expires_at > NOW()
+      WHERE p.author_id = $2 AND (p.expires_at > NOW() OR p.expires_at IS NULL)
       GROUP BY p.id, u.name, f.follower_id
       ORDER BY p.created_at DESC
     `, [userId, targetUserId]);
