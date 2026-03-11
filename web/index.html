@@ -159,11 +159,12 @@ header {
     position: relative;
     z-index: 2;
     display: flex;
-    gap: 30px; /* Reduzi o gap para as fotos ficarem mais próximas no PC */
+    gap: 30px;
     overflow-x: auto;
-    padding: 0 40px; /* Removido o recuo de 50vw para as fotos preencherem a lateral */
+    padding: 0 5vw; /* Reduzido drásticamente para as fotos preencherem o monitor */
     height: 100%;
     align-items: flex-start;
+    justify-content: flex-start; /* Garante que os itens comecem da esquerda */
     scroll-behavior: smooth;
     scrollbar-width: none;
 }
@@ -877,13 +878,15 @@ header {
     #feed {
         padding: 0 10px !important;
         gap: 15px;
+        justify-content: flex-start !important;
     }
     .post {
         min-width: 95vw !important; /* Zoom máximo no celular */
         max-width: 95vw !important;
+        padding-top: 40px !important; /* Mais perto da corda no mobile */
     }
     #scene {
-        height: 600px !important; /* Aumentado para fotos maiores caberem */
+        height: 650px !important; /* Mais altura para ver a foto grande */
     }
     .scrollBtn {
         display: none !important;
@@ -904,7 +907,7 @@ header {
 <header>
     <div class="topbar">
         <div class="logo">
-            <img src="logo.png" alt="My Clothesline" style="height: 50px; cursor: pointer; display: block;" onerror="this.onerror=null; this.outerHTML='<h1>My Clothesline</h1>'">
+            <img src="/logo.png?v=2" alt="My Clothesline" style="height: 60px; min-width: 50px; cursor: pointer; display: block; object-fit: contain;" onerror="this.onerror=null; this.outerHTML='<h1 style=\'margin:0\'>My Clothesline</h1>'">
             <div style="font-size: 11px; font-weight: 600; opacity: 0.6; margin-top: -2px;">Meu Varal Virtual</div>
         </div>
 
@@ -1611,9 +1614,9 @@ function renderFeed(){
                     <div style="word-break: break-word; line-height: 1.2; font-weight: 600; color: var(--text-main);">
                         ${post.author_name || "Desconhecido"}
                     </div>
-                    ${(currentUser && post.author_id != currentUser.id) ? `
-                        <button onclick="${post.is_followed ? `pararDeSeguir(${post.author_id})` : `seguirUsuario(${post.author_id})`}" style="background: ${post.is_followed ? 'rgba(0,0,0,0.05)' : 'rgba(24, 119, 242, 0.1)'}; border: none; color: ${post.is_followed ? '#888' : '#1877f2'}; font-size: 10px; padding: 4px 8px; border-radius: 12px; cursor: pointer; white-space: nowrap; font-weight: 700; font-family: var(--font-outfit); transition: all 0.2; display: flex; align-items: center;">
-                            ${post.is_followed ? 'Seguindo' : '+ Seguir'}
+                    ${(currentUser && Number(post.author_id) !== Number(currentUser.id)) ? `
+                        <button onclick="${!!post.is_followed ? `pararDeSeguir(${post.author_id})` : `seguirUsuario(${post.author_id})`}" style="background: ${!!post.is_followed ? 'rgba(0,0,0,0.05)' : 'rgba(24, 119, 242, 0.15)'}; border: none; color: ${!!post.is_followed ? '#888' : '#1877f2'}; font-size: 11px; padding: 6px 12px; border-radius: 12px; cursor: pointer; white-space: nowrap; font-weight: 800; font-family: var(--font-outfit); transition: all 0.2s; display: flex; align-items: center; border: 1px solid ${!!post.is_followed ? 'transparent' : 'rgba(24, 119, 242, 0.2)'};">
+                            ${!!post.is_followed ? 'Seguindo' : '+ Seguir'}
                         </button>
                     ` : ''}
                     <div style="margin-left: auto; display: flex; align-items: center;">
@@ -1645,7 +1648,17 @@ function renderFeed(){
         feed.appendChild(div)
     })
     console.log("Posts Data Rendered:", postsData.map(p => ({ id: p.id, caption: p.caption })));
-    setTimeout(updateCenter,100)
+// Função para atualizar o centro e garantir que não haja erros de execução
+function updateCenter() {
+    const posts = document.querySelectorAll(".post");
+    const containerWidth = feed.offsetWidth;
+    posts.forEach(p => {
+        const rect = p.getBoundingClientRect();
+        const center = rect.left + rect.width / 2;
+        const dist = Math.abs(containerWidth / 2 - center);
+        if (dist < 150) p.classList.add("active");
+        else p.classList.remove("active");
+    });
 }
 
 async function compartilharPost(id) {
