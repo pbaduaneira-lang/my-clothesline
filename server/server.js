@@ -88,7 +88,7 @@ const storage = multer.diskStorage({
     cb(null, `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`);
   }
 });
-const upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024 } }); // Limite de 10MB
+const upload = multer({ storage, limits: { fileSize: 1 * 1024 * 1024 } }); // Limite 1MB (imagens comprimidas no frontend)
 
 // SERVIR ARQUIVOS DE UPLOAD
 app.use("/uploads", express.static(uploadDir));
@@ -374,6 +374,14 @@ app.post("/messages", async (req, res) => {
 
 /* CRIAR POST */
 
+// Prevenir crash silencioso do processo Node.js
+process.on('uncaughtException', (err) => {
+  console.error('[UNCAUGHT EXCEPTION]:', err);
+});
+process.on('unhandledRejection', (err) => {
+  console.error('[UNHANDLED REJECTION]:', err);
+});
+
 app.post("/post", upload.single("media"), async (req, res) => {
   try {
     const token = req.headers.authorization?.split(" ")[1];
@@ -388,17 +396,19 @@ app.post("/post", upload.single("media"), async (req, res) => {
     }
     const caption = req.body.caption || "";
     
-    // Configurações do arquivo usando o nome gerado pelo diskStorage
     const fileName = req.file.filename;
     const filePath = `${author_id}/${fileName}`;
     const type = req.file.mimetype.startsWith("video") ? "video" : "image";
 
-    // Upload para o Supabase Storage
-    console.log(`[Upload] Iniciando envio da foto ${filePath} para o Supabase (tamanho: ${req.file.size} bytes)...`);
+    console.log(`[Upload] Arquivo recebido: ${filePath} (${req.file.size} bytes). Enviando ao Supabase...`);
     
-    // Ler arquivo do disco (seguro pois imagens são comprimidas no frontend ~100-200KB)
+    // Ler arquivo do disco
     const fileBuffer = fs.readFileSync(req.file.path);
 
+    // Limpar arquivo temporário do disco ANTES do upload (já lemos para o buffer)
+    fs.unlink(req.file.path, () => {});
+
+    // Upload via SDK do Supabase
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from("clothesline-uploads")
       .upload(filePath, fileBuffer, {
@@ -407,53 +417,34 @@ app.post("/post", upload.single("media"), async (req, res) => {
         cacheControl: '3600'
       });
 
-    // Limpar o arquivo temporário do disco
-    fs.unlink(req.file.path, (err) => {
-      if (err) console.error("Aviso: arquivo temp não pode ser deletado:", err);
-    });
+    // Liberar buffer da memória imediatamente
+    // (fileBuffer sai de escopo e será coletado pelo GC)
 
     if (uploadError) {
-      console.error("[ERRO CRÍTICO SUPABASE]:", JSON.stringify(uploadError, null, 2));
-      // Cleanup do arquivo local em caso de erro no Supabase
-      fs.unlink(req.file.path, () => {});
+      console.error("[ERRO SUPABASE]:", JSON.stringify(uploadError, null, 2));
       return res.status(502).json({ error: "Erro Supabase Storage", details: uploadError.message });
     }
 
-    console.log(`[Upload] Sucesso! Pegando URL pública...`);
-    // Gerar URL pública da imagem
-    const { data: publicUrlData } = supabase.storage
-      .from("clothesline-uploads")
-      .getPublicUrl(filePath);
+    console.log(`[Upload] Sucesso!`);
 
-    if (!publicUrlData) {
-        fs.unlink(req.file.path, () => {});
-        throw new Error("Falha ao gerar URL pública do Supabase");
-    }
-
-    const media_url = publicUrlData.publicUrl;
-    console.log(`[Upload] URL Gerada: ${media_url}`);
+    // URL pública (padrão fixo do Supabase)
+    const media_url = `${SUPABASE_URL}/storage/v1/object/public/clothesline-uploads/${filePath}`;
+    console.log(`[Upload] URL: ${media_url}`);
 
     const result = await pool.query(
       "INSERT INTO posts (user_id, media_url, type, caption, author_id, created_at, expires_at) VALUES ($1,$2,$3,$4,$5,NOW(), NOW() + INTERVAL '48 hours') RETURNING *",
       [author_id, media_url, type, caption, author_id]
     );
 
-    // Limpar o arquivo temporário do disco após sucesso total
-    fs.unlink(req.file.path, (err) => {
-      if (err) console.error("Aviso: arquivo temp não pode ser deletado:", err);
-    });
-
     res.json(result.rows[0]);
   } catch (err) {
     console.error("[ERRO GERAL NO POST]:", err);
-    // Tenta limpar o arquivo se algo der errado no catch
     if (req.file && req.file.path) {
-        fs.unlink(req.file.path, () => {});
+      fs.unlink(req.file.path, () => {});
     }
     res.status(500).json({ 
-        error: "Erro no servidor ao criar post", 
-        details: err.message,
-        stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+      error: "Erro no servidor ao criar post", 
+      details: err.message 
     });
   }
 });
