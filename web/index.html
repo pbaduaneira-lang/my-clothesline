@@ -883,48 +883,79 @@ header {
         height: 100vh !important;
     }
     .topbar {
-        padding: 15px 10px !important;
-        flex-direction: column;
-        gap: 12px;
+        padding: 5px 10px !important;
+        flex-direction: row !important;
+        flex-wrap: wrap !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        gap: 5px !important;
     }
     .logo h1 {
-        font-size: 28px !important;
+        font-size: 20px !important;
+    }
+    #userProfileHeader {
+        padding: 2px 8px !important;
+    }
+    #userProfileHeader span {
+        display: none; /* Esconde nome no celular para economizar espaço */
     }
     .btn-pendurar {
-        padding: 14px 28px !important;
-        font-size: 15px !important;
+        padding: 8px 12px !important;
+        font-size: 13px !important;
+    }
+    .btn-pendurar span:last-child {
+        display: none; /* Esconde texto "Pendurar" no celular */
     }
     .icon-btn {
-        width: 50px !important;
-        height: 50px !important;
-        font-size: 22px !important;
+        width: 36px !important;
+        height: 36px !important;
+        font-size: 16px !important;
+    }
+    #globalSearchInput {
+        width: 100% !important;
+        margin: 5px 0 !important;
+        font-size: 12px !important;
+        padding: 6px 12px !important;
+    }
+    .search-box:focus {
+        width: 100% !important;
+    }
+    .user-menu {
+        gap: 8px !important;
+    }
+    #btnLogout {
+        padding: 6px 10px !important;
+        font-size: 11px !important;
     }
     #scene {
-        height: 300px !important;
+        height: 220px !important; /* Mais baixo para o varal respirar */
         margin-top: 0;
         align-items: flex-start;
-        z-index: 2000 !important; /* Rodar ACIMA de tudo */
+        z-index: 2000 !important;
         position: relative;
+        overflow: visible !important;
     }
     #feed {
-        padding: 0 10px !important;
-        gap: 20px;
+        padding: 0 50px !important; /* Espaço para ver fotos nas laterais */
+        gap: 15px !important;
         justify-content: flex-start !important;
+        height: 300px !important; /* Permite que o card da foto transborde levemente */
     }
     .post {
-        min-width: 160px !important;
-        max-width: 160px !important;
+        min-width: 140px !important;
+        max-width: 140px !important;
         padding-top: 25px !important;
     }
     .photo-card {
         padding: 8px !important;
+        border-radius: 8px !important;
     }
     #mobile-focus-area {
         display: flex !important;
-        height: 75vh !important; /* Ocupa bem mais espaço */
+        height: 55vh !important; /* Reduzido para não engolir o Feed */
         top: auto;
         bottom: 0;
-        z-index: 500 !important; /* Fica ABAIXO do varal */
+        z-index: 500 !important;
     }
     .scrollBtn {
         display: none !important;
