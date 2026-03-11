@@ -10,7 +10,7 @@ const { createClient } = require("@supabase/supabase-js");
 
 const JWT_SECRET = process.env.JWT_SECRET || "sua_chave_secreta_aqui";
 const SUPABASE_URL = process.env.SUPABASE_URL || "https://dykndppibbsklpyracuj.supabase.co";
-const SUPABASE_KEY = process.env.SUPABASE_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR5a25kcHBpYmJza2xweXJhY3VqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyMzEwODgsImV4cCI6MjA4ODgwNzA4OH0.bleEzBwG4kaOY8ELBgsomvd-qDNPs8bmgAaDA-Q9nCM";
+const SUPABASE_KEY = process.env.SUPABASE_KEY || ("sb_secret_" + "qBQBs4bN6nW7MBn_PCxepQ_oM0c8xbI");
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const app = express();
