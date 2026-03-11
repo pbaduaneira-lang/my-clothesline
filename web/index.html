@@ -1445,9 +1445,9 @@ function renderFeed(){
             </div>`
         ).join("")
 
-        // Se for Base64 (persistência BD) usa direto. Senão, assume que é arquivo antigo em /uploads/
+        // Se for Base64 (persistência BD) ou URL externa (Supabase), usa direto. Senão, assume que é arquivo antigo em /uploads/
         let mediaHtml = "";
-        let mediaUrl = post.url ? post.url : (post.media_url.startsWith('data:') ? post.media_url : `/uploads/${post.media_url}`);
+        let mediaUrl = post.url ? post.url : (post.media_url.startsWith('data:') || post.media_url.startsWith('http') ? post.media_url : `/uploads/${post.media_url}`);
         
         if (post.type === "video") {
             mediaHtml = `<video class="media" controls src="${mediaUrl}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'"></video>`;
