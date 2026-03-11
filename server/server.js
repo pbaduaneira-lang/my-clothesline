@@ -77,7 +77,15 @@ if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir, { recursive: true });
 }
 
-const storage = multer.memoryStorage();
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, uploadDir)
+  },
+  filename: function (req, file, cb) {
+    const fileExt = file.mimetype.split("/")[1] || "jpeg";
+    cb(null, `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`);
+  }
+});
 const upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024 } }); // Limite de 10MB
 
 // SERVIR ARQUIVOS DE UPLOAD
@@ -378,25 +386,29 @@ app.post("/post", upload.single("media"), async (req, res) => {
     }
     const caption = req.body.caption || "";
     
-    // Configurações do arquivo
-    const fileExt = req.file.mimetype.split("/")[1];
-    const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+    // Configurações do arquivo usando o nome gerado pelo diskStorage
+    const fileName = req.file.filename;
     const filePath = `${author_id}/${fileName}`;
     const type = req.file.mimetype.startsWith("video") ? "video" : "image";
 
-    // Upload para o Supabase Storage (Bucket: clothesline-uploads)
-    console.log(`[Upload] Iniciando envio da foto ${filePath} para o Supabase...`);
+    // Upload para o Supabase Storage
+    console.log(`[Upload] Iniciando envio da foto ${filePath} para o Supabase (via stream de disco)...`);
     
+    const fileStream = fs.createReadStream(req.file.path);
+
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from("clothesline-uploads")
-      .upload(filePath, req.file.buffer, {
+      .upload(filePath, fileStream, {
         contentType: req.file.mimetype,
         upsert: true,
-        cacheControl: '3600'
+        cacheControl: '3600',
+        duplex: 'half'
       });
 
-    // Limpar o buffer da memória manualmente do Node.js para não explodir RAM
-    req.file.buffer = null;
+    // Limpar o arquivo temporário do disco
+    fs.unlink(req.file.path, (err) => {
+      if (err) console.error("Aviso: arquivo temp não pode ser deletado:", err);
+    });
 
     if (uploadError) {
       console.error("[ERRO CRÍTICO SUPABASE]:", JSON.stringify(uploadError, null, 2));
