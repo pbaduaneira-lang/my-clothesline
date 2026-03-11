@@ -654,6 +654,24 @@ app.get("/feed/user/:id", async (req, res) => {
   }
 });
 
+/* ROTA DE EMERGÊNCIA - LIMPAR BANCO (REMOVER APÓS USO) */
+app.get("/debug/clear-database-now", async (req, res) => {
+  try {
+    console.log("!!! SOLICITAÇÃO DE LIMPEZA DE BANCO RECEBIDA !!!");
+    await pool.query("DELETE FROM comments");
+    await pool.query("DELETE FROM follows");
+    if (pool.options.database !== 'postgres') { // Evitar deletar drops se a tabela nao existir no mini-schema
+        try { await pool.query("DELETE FROM drops"); } catch(e) {}
+    }
+    await pool.query("DELETE FROM posts");
+    console.log("!!! BANCO LIMPO COM SUCESSO NO RENDER !!!");
+    res.send("<h1>Banco de Dados Limpo com Sucesso!</h1><p>Todas as fotos Base64 foram removidas. Pode voltar ao Varal agora.</p>");
+  } catch (err) {
+    console.error("ERRO NA LIMPEZA:", err);
+    res.status(500).send("Erro ao limpar banco: " + err.message);
+  }
+});
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Servidor rodando na porta ${PORT}`);

@@ -1332,7 +1332,7 @@ async function carregarMensagens(isAuto = false) {
         const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 50;
 
         container.innerHTML = messages.map(m => `
-            <div class="message-item ${m.sender_id === currentUser.id ? 'mine' : ''}">
+            <div class="message-item ${m.sender_id == currentUser.id ? 'mine' : ''}">
                 <div class="message-info">${m.sender_name} (@${m.sender_username})</div>
                 <div>${m.text}</div>
             </div>
@@ -1463,14 +1463,14 @@ function renderFeed(){
                         ${post.shared_from_id ? 'Compartilhado' : 'Postado'} por <b>${post.author_name || "Desconhecido"}</b>
                     </div>
                     <div style="display: flex; gap: 5px; align-items: center; flex-shrink: 0;">
-                        ${(currentUser && post.author_id !== currentUser.id) ? `
-                            <button onclick="${post.is_followed ? `pararDeSeguir(${post.author_id})` : `seguirUsuario(${post.author_id})`}" style="background: none; border: 1px solid ${post.is_followed ? '#ccc' : '#1877f2'}; color: ${post.is_followed ? '#999' : '#1877f2'}; font-size: 10px; padding: 2px 6px; border-radius: 4px; cursor: pointer; white-space: nowrap;">
-                                ${post.is_followed ? 'Seguindo' : '+ Seguir'}
-                            </button>
-                        ` : ''}
-                        ${(currentUser && post.author_id === currentUser.id) ? `
+                        ${(currentUser && post.author_id == currentUser.id) ? `
                             <button onclick="excluirPost(${post.id})" style="background: none; border: none; color: #ff4444; font-size: 11px; cursor: pointer; display: flex; align-items: center; gap: 3px; padding: 0; margin-left: auto;" title="Derrubar do varal">
                                 🗑️ <span style="font-size: 9px;">tirar</span>
+                            </button>
+                        ` : ''}
+                        ${(currentUser && post.author_id != currentUser.id) ? `
+                            <button onclick="${post.is_followed ? `pararDeSeguir(${post.author_id})` : `seguirUsuario(${post.author_id})`}" style="background: none; border: 1px solid ${post.is_followed ? '#ccc' : '#1877f2'}; color: ${post.is_followed ? '#999' : '#1877f2'}; font-size: 10px; padding: 2px 6px; border-radius: 4px; cursor: pointer; white-space: nowrap;">
+                                ${post.is_followed ? 'Seguindo' : '+ Seguir'}
                             </button>
                         ` : ''}
                     </div>
