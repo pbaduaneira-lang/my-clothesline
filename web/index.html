@@ -900,9 +900,11 @@ header {
         font-size: 22px !important;
     }
     #scene {
-        height: 250px !important;
-        margin-top: 5px;
+        height: 300px !important;
+        margin-top: 0;
         align-items: flex-start;
+        z-index: 2000 !important; /* Rodar ACIMA de tudo */
+        position: relative;
     }
     #feed {
         padding: 0 10px !important;
@@ -919,7 +921,10 @@ header {
     }
     #mobile-focus-area {
         display: flex !important;
-        height: calc(100vh - 430px) !important;
+        height: 75vh !important; /* Ocupa bem mais espaço */
+        top: auto;
+        bottom: 0;
+        z-index: 500 !important; /* Fica ABAIXO do varal */
     }
     .scrollBtn {
         display: none !important;
@@ -1382,13 +1387,19 @@ async function carregarSeguidores() {
 }
 
 function checkAuth() {
-    if (currentUser && token) {
+    if (currentUser && token && token !== "null") {
         document.getElementById("modalAuth").style.display = "none";
-        document.getElementById("userInitial").textContent = currentUser.name[0].toUpperCase();
-        document.getElementById("userNameHeader").textContent = currentUser.name;
+        document.getElementById("userInitial").textContent = currentUser.name ? currentUser.name[0].toUpperCase() : "?";
+        document.getElementById("userNameHeader").textContent = currentUser.name || "";
+        document.getElementById("userProfileHeader").style.display = "flex";
+        document.getElementById("btnLogout").style.display = "block";
+        document.getElementById("btnPendurarTopo").style.display = "flex";
         updateProfileStats();
     } else {
         document.getElementById("modalAuth").style.display = "flex";
+        document.getElementById("userProfileHeader").style.display = "none";
+        document.getElementById("btnLogout").style.display = "none";
+        document.getElementById("btnPendurarTopo").style.display = "none";
     }
 }
 

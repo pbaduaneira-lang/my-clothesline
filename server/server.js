@@ -442,6 +442,11 @@ app.post("/post", upload.single("media"), async (req, res) => {
     if (req.file && req.file.path) {
       fs.unlink(req.file.path, () => {});
     }
+    
+    if (err.name === 'JsonWebTokenError' || err.name === 'TokenExpiredError') {
+      return res.status(401).json({ error: "Sessão inválida ou expirada. Por favor, faça login novamente." });
+    }
+
     res.status(500).json({ 
       error: "Erro no servidor ao criar post", 
       details: err.message 
