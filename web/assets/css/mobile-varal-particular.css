@@ -1,0 +1,244 @@
+/* ESTILOS PARA VARAL PARTICULAR MOBILE */
+
+#modalVaralParticular {
+    background: var(--varal-bg);
+    display: none;
+    flex-direction: column;
+    padding: 0;
+    overflow: hidden;
+    z-index: 2000;
+}
+
+#modalVaralParticular.active {
+    display: flex;
+}
+
+/* HEADER MOBILE */
+.mobile-varal-header {
+    height: 55px;
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    border-bottom: 1px solid var(--glass-border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 15px;
+    flex-shrink: 0;
+}
+
+.mobile-varal-header .logo-section {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.mobile-varal-header h1 {
+    font-size: 18px;
+    font-weight: 800;
+    margin: 0;
+    color: var(--text-main);
+}
+
+.mobile-varal-header h2 {
+    font-size: 14px;
+    font-weight: 500;
+    margin: 0;
+    color: var(--accent-blue);
+    opacity: 0.8;
+}
+
+.btn-close-varal {
+    background: linear-gradient(135deg, #ff4b2b 0%, #ff416c 100%);
+    color: white;
+    border: none;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 10px rgba(255, 75, 43, 0.3);
+}
+
+/* LAYOUT CONTEÚDO */
+.mobile-varal-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start; 
+    overflow: hidden;
+    padding: 0;
+    position: relative; 
+}
+
+/* Fundo desfocado removido conforme pedido */
+
+/* SIDEBAR (HORIZONTAl NO MOBILE) */
+.mobile-pessoas-strip {
+    height: 60px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 10px;
+    margin-top: -10px; /* Sobe a faixa para encostar totalmente no header */
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+.mobile-pessoas-strip::-webkit-scrollbar { display: none; }
+
+.btn-pessoa-mobile {
+    flex-shrink: 0;
+    width: 70px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+}
+
+.avatar-mobile {
+    width: 35px;
+    height: 35px;
+    border-radius: 8px;
+    background: var(--gradient-primary);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 18px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+/* Botões de Ação na Strip (Mobile) */
+.action-avatar {
+    background: white !important;
+    border: 2px solid currentColor;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05) !important;
+}
+
+.action-label {
+    font-weight: 800 !important;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.action-btn-blue { color: #1d4ed8; }
+.action-btn-blue .action-avatar { background: #eff6ff !important; border-color: #3b82f6; }
+
+.action-btn-green { color: #15803d; }
+.action-btn-green .action-avatar { background: #f0fdf4 !important; border-color: #22c55e; }
+
+.action-btn-amber { color: #b45309; }
+.action-btn-amber .action-avatar { background: #fffbeb !important; border-color: #f59e0b; }
+
+.nome-mobile {
+    font-size: 10px;
+    font-weight: 700;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 100%;
+}
+
+/* CANVAS DO VARAL (LIMPO E CENTRALIZADO) */
+.mobile-varal-canvas {
+    height: auto !important; 
+    margin: 0 !important;
+    border: none !important; 
+    display: flex;
+    align-items: flex-start; /* GARANTE QUE O VARAL FIQUE NO TOPO DA ÁREA DISPONÍVEL */
+    justify-content: flex-start;
+    gap: 15px; /* Reduzido de 20px */
+    padding: 0 15px !important; /* Reduzido de 20px */
+    margin-top: 5px !important; 
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    flex: 0 0 auto !important; /* Não preenche a tela, permite que o rodapé suba */
+    background: transparent !important; 
+}
+.mobile-varal-canvas::-webkit-scrollbar { display: none; }
+
+.mobile-varal-item {
+    scroll-snap-align: center;
+    flex-shrink: 0;
+    width: 240px; /* Card substancial, miniaturizado dos 300px do Desktop */
+}
+
+.mobile-varal-item .photo-card, 
+.mobile-varal-item .message-board-card {
+    width: 100% !important;
+    height: 320px !important; /* Proporcional ao card maior */
+    margin: 0 !important;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+}
+
+.mobile-varal-item .media-container {
+    height: 200px !important;
+}
+
+/* TOOLBAR MOBILE */
+.mobile-varal-toolbar {
+    height: 80px;
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-blur);
+    border-top: 1px solid var(--glass-border);
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    padding: 0 10px;
+    position: relative;
+}
+
+.toolbar-btn-mobile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    background: none;
+    border: none;
+    color: var(--text-muted);
+}
+
+.toolbar-btn-mobile i {
+    width: 24px;
+    height: 24px;
+}
+
+.toolbar-btn-mobile span {
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.toolbar-btn-mobile.btn-incluir { color: #22c55e; }
+.toolbar-btn-mobile.btn-apagar { color: #ef4444; }
+.toolbar-btn-mobile.btn-msg { color: #f59e0b; }
+
+/* MODAL BUSCA MOBILE OVERLAY */
+#modalBuscaVaralMobile {
+    z-index: 2100;
+}
+
+.naming-bar-mobile {
+    position: absolute;
+    top: -60px;
+    left: 15px;
+    right: 15px;
+    background: white;
+    padding: 10px 15px;
+    border-radius: 20px;
+    display: flex;
+    gap: 10px;
+    box-shadow: 0 -5px 20px rgba(0,0,0,0.1);
+}
+
+.naming-bar-mobile input {
+    flex: 1;
+    border: none;
+    outline: none;
+    font-weight: 600;
+}

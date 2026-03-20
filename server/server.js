@@ -1,17 +1,25 @@
+const path = require("path");
+require('dotenv').config({ path: path.join(__dirname, '../.env') });
 const express = require("express");
 const cors = require("cors");
 const multer = require("multer");
-const path = require("path");
 const fs = require("fs");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const pool = require("./db");
-const { createClient } = require("@supabase/supabase-js");
+// Supabase removido para usar armazenamento local
 
-const JWT_SECRET = process.env.JWT_SECRET || "sua_chave_secreta_aqui";
-const SUPABASE_URL = process.env.SUPABASE_URL || "https://dykndppibbsklpyracuj.supabase.co";
-const SUPABASE_KEY = process.env.SUPABASE_KEY || ("sb_secret_" + "qBQBs4bN6nW7MBn_PCxepQ_oM0c8xbI");
-const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+const { createClient } = require('@supabase/supabase-js');
+
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  console.error("ERRO: JWT_SECRET não configurado!");
+}
+
+// Inicialização do Supabase
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_KEY;
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 const app = express();
 app.use(cors());
@@ -26,7 +34,30 @@ async function initDB() {
           name VARCHAR(100) NOT NULL,
           username VARCHAR(50) UNIQUE NOT NULL,
           password VARCHAR(255) NOT NULL,
+          birth_date DATE,
+          residence VARCHAR(255),
+          varal_name VARCHAR(100) DEFAULT 'Meu Varal',
           last_seen TIMESTAMP DEFAULT NOW()
+      );
+      CREATE TABLE IF NOT EXISTS user_varal_items (
+          id SERIAL PRIMARY KEY,
+          user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+          varal_id INTEGER, -- Será preenchido para novos varais
+          item_type VARCHAR(20) NOT NULL, -- 'person', 'message', 'post'
+          content TEXT NOT NULL,          -- nome da pessoa, texto da msg ou ID do post
+          author_name VARCHAR(100),       -- opcional para msgs
+          created_at TIMESTAMP DEFAULT NOW()
+      );
+      CREATE TABLE IF NOT EXISTS private_varais (
+          id SERIAL PRIMARY KEY,
+          name VARCHAR(100) NOT NULL,
+          owner_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+          created_at TIMESTAMP DEFAULT NOW()
+      );
+      CREATE TABLE IF NOT EXISTS private_varal_participants (
+          varal_id INTEGER REFERENCES private_varais(id) ON DELETE CASCADE,
+          user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+          PRIMARY KEY (varal_id, user_id)
       );
       CREATE TABLE IF NOT EXISTS posts (
           id SERIAL PRIMARY KEY,
@@ -61,8 +92,23 @@ async function initDB() {
           followed_id INTEGER REFERENCES users(id),
           PRIMARY KEY (follower_id, followed_id)
       );
-      -- Garantir que a coluna expires_at existe (Migração Automática)
+      CREATE TABLE IF NOT EXISTS notifications (
+          id SERIAL PRIMARY KEY,
+          user_id INTEGER REFERENCES users(id),
+          actor_id INTEGER REFERENCES users(id),
+          type VARCHAR(20) NOT NULL,
+          post_id INTEGER REFERENCES posts(id) ON DELETE CASCADE,
+          is_read BOOLEAN DEFAULT false,
+          created_at TIMESTAMP DEFAULT NOW()
+      );
+      -- Garantir que as colunas novas existam (Migração Automática)
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS birth_date DATE;
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS residence VARCHAR(255);
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS varal_name VARCHAR(100) DEFAULT 'Meu Varal';
+      ALTER TABLE user_varal_items ADD COLUMN IF NOT EXISTS varal_id INTEGER REFERENCES private_varais(id) ON DELETE CASCADE;
       ALTER TABLE posts ADD COLUMN IF NOT EXISTS expires_at TIMESTAMP;
+      ALTER TABLE posts ADD COLUMN IF NOT EXISTS varal_id INTEGER REFERENCES private_varais(id) ON DELETE CASCADE;
+      ALTER TABLE posts ADD COLUMN IF NOT EXISTS is_private BOOLEAN DEFAULT false;
     `);
     console.log("Banco de dados inicializado com sucesso!");
   } catch (err) {
@@ -71,30 +117,24 @@ async function initDB() {
 }
 
 // Inicializa as tabelas ao subir o servidor
+// Inicializa as tabelas ao subir o servidor
 initDB();
 
-// PASTA DE UPLOAD
-const uploadDir = path.join(__dirname, "uploads");
-if (!fs.existsSync(uploadDir)) {
-    fs.mkdirSync(uploadDir, { recursive: true });
-}
-
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, uploadDir)
-  },
-  filename: function (req, file, cb) {
-    const fileExt = file.mimetype.split("/")[1] || "jpeg";
-    cb(null, `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`);
-  }
+// Configuração do Multer para Memória (O arquivo não toca o HD do servidor, vai direto pro Supabase)
+const storage = multer.memoryStorage();
+const upload = multer({ 
+  storage, 
+  limits: { fileSize: 100 * 1024 * 1024 } // 100MB
 });
-const upload = multer({ storage, limits: { fileSize: 1 * 1024 * 1024 } }); // Limite 1MB (imagens comprimidas no frontend)
 
-// SERVIR ARQUIVOS DE UPLOAD
-app.use("/uploads", express.static(uploadDir));
-
+// SERVIR ARQUIVOS DE UPLOAD COM SUPORTE A STREAMING (RANGE REQUESTS)
 // SERVIR FRONTEND ESTÁTICO (WEB)
 app.use(express.static(path.join(__dirname, "../web")));
+
+// ROTA RAIZ EXPLÍCITA (Garante que index.html carregue)
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "../web/index.html"));
+});
 
 /* AUTENTICAÇÃO E HEARTBEAT */
 
@@ -108,13 +148,13 @@ async function updateLastSeen(userId) {
 
 app.post("/register", async (req, res) => {
   try {
-    const { name, username, password } = req.body;
+    const { name, username, password, birth_date, residence } = req.body;
     const trimmedUsername = username.trim().toLowerCase();
     const trimmedPassword = password.trim();
     const hashedPassword = await bcrypt.hash(trimmedPassword, 10);
     const result = await pool.query(
-      "INSERT INTO users (name, username, password) VALUES ($1, $2, $3) RETURNING id, name, username",
-      [name, trimmedUsername, hashedPassword]
+      "INSERT INTO users (name, username, password, birth_date, residence) VALUES ($1, $2, $3, $4, $5) RETURNING id, name, username, birth_date, residence, varal_name",
+      [name, trimmedUsername, hashedPassword, birth_date || null, residence || null]
     );
     console.log(`Novo usuário registrado: ${trimmedUsername}`);
     res.json(result.rows[0]);
@@ -152,10 +192,327 @@ app.post("/login", async (req, res) => {
     
     await updateLastSeen(user.id);
     
-    res.json({ token, user: { id: user.id, name: user.name, username: user.username } });
+    res.json({ 
+      token, 
+      user: { 
+        id: user.id, 
+        name: user.name, 
+        username: user.username, 
+        birth_date: user.birth_date, 
+        residence: user.residence,
+        varal_name: user.varal_name
+      } 
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Erro ao fazer login" });
+  }
+});
+
+// ROTA PARA LISTAR ANIVERSARIANTES DO MÊS
+app.get("/anniversaries", async (req, res) => {
+  try {
+    // Busca usuários que fazem aniversário no mês atual
+    const result = await pool.query(`
+      SELECT id, name, username, birth_date, residence 
+      FROM users 
+      WHERE birth_date IS NOT NULL 
+      AND EXTRACT(MONTH FROM birth_date) = EXTRACT(MONTH FROM CURRENT_DATE)
+      ORDER BY EXTRACT(DAY FROM birth_date) ASC
+    `);
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Erro ao buscar aniversariantes" });
+  }
+});
+
+// --- VARAL PARTICULAR SINCRONIZADO ---
+
+app.get("/varal", async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(" ")[1];
+    if (!token) return res.status(401).json({ error: "Não autorizado" });
+    let decoded;
+    try {
+      decoded = jwt.verify(token, JWT_SECRET);
+    } catch (err) {
+      if (err.name === 'TokenExpiredError' || err.name === 'JsonWebTokenError') {
+        return res.status(401).json({ error: "A sessão expirou. Faça login novamente." });
+      }
+      return res.status(403).json({ error: "Token inválido" });
+    }
+    const userId = decoded.id;
+
+    const userRes = await pool.query("SELECT varal_name FROM users WHERE id = $1", [userId]);
+    const itemsRes = await pool.query("SELECT * FROM user_varal_items WHERE user_id = $1 ORDER BY created_at ASC", [userId]);
+    
+    res.json({
+      name: userRes.rows[0]?.varal_name || "Meu Varal",
+      items: itemsRes.rows.map(item => ({
+        id: item.id,
+        type: item.item_type,
+        content: item.content,
+        author: item.author_name,
+        created_at: item.created_at
+      }))
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Erro ao carregar Varal Particular" });
+  }
+});
+
+app.post("/varal/name", async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(" ")[1];
+    if (!token) return res.status(401).json({ error: "Não autorizado" });
+    let decoded;
+    try {
+      decoded = jwt.verify(token, JWT_SECRET);
+    } catch (err) {
+      if (err.name === 'TokenExpiredError' || err.name === 'JsonWebTokenError') {
+        return res.status(401).json({ error: "A sessão expirou. Faça login novamente." });
+      }
+      return res.status(403).json({ error: "Token inválido" });
+    }
+    const { name } = req.body;
+    
+    await pool.query("UPDATE users SET varal_name = $1 WHERE id = $2", [name, decoded.id]);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: "Erro ao atualizar nome do varal" });
+  }
+});
+
+app.post("/varal/item", async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(" ")[1];
+    if (!token) return res.status(401).json({ error: "Não autorizado" });
+    let decoded;
+    try {
+      decoded = jwt.verify(token, JWT_SECRET);
+    } catch (err) {
+      if (err.name === 'TokenExpiredError' || err.name === 'JsonWebTokenError') {
+        return res.status(401).json({ error: "A sessão expirou. Faça login novamente." });
+      }
+      return res.status(403).json({ error: "Token inválido" });
+    }
+    const { type, content, author_name } = req.body;
+
+    const result = await pool.query(
+      "INSERT INTO user_varal_items (user_id, item_type, content, author_name) VALUES ($1, $2, $3, $4) RETURNING *",
+      [decoded.id, type, content, author_name || null]
+    );
+    res.json(result.rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: "Erro ao adicionar item ao varal" });
+  }
+});
+
+app.delete("/varal/item/:id", async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(" ")[1];
+    if (!token) return res.status(401).json({ error: "Não autorizado" });
+    let decoded;
+    try {
+      decoded = jwt.verify(token, JWT_SECRET);
+    } catch (err) {
+      if (err.name === 'TokenExpiredError' || err.name === 'JsonWebTokenError') {
+        return res.status(401).json({ error: "A sessão expirou. Faça login novamente." });
+      }
+      return res.status(403).json({ error: "Token inválido" });
+    }
+    
+    await pool.query("DELETE FROM user_varal_items WHERE id = $1 AND user_id = $2", [req.params.id, decoded.id]);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: "Erro ao remover item" });
+  }
+});
+
+// --- MÚLTIPLOS VARAIS PRIVADOS (GRUPOS) ---
+
+app.get("/varais", async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(" ")[1];
+    if (!token) return res.status(401).json({ error: "Não autorizado" });
+    let decoded;
+    try {
+      decoded = jwt.verify(token, JWT_SECRET);
+    } catch (err) {
+      if (err.name === 'TokenExpiredError' || err.name === 'JsonWebTokenError') {
+        return res.status(401).json({ error: "A sessão expirou. Faça login novamente." });
+      }
+      return res.status(403).json({ error: "Token inválido" });
+    }
+    const userId = decoded.id;
+
+    const result = await pool.query(`
+      SELECT v.*, 
+             u.name as owner_name,
+             (SELECT COUNT(*) FROM private_varal_participants WHERE varal_id = v.id) as participants_count
+      FROM private_varais v
+      JOIN private_varal_participants vp ON v.id = vp.varal_id
+      JOIN users u ON v.owner_id = u.id
+      WHERE vp.user_id = $1
+      ORDER BY v.created_at DESC
+    `, [userId]);
+    
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Erro ao listar varais" });
+  }
+});
+
+app.post("/varais", async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(" ")[1];
+    if (!token) return res.status(401).json({ error: "Não autorizado" });
+    let decoded;
+    try {
+      decoded = jwt.verify(token, JWT_SECRET);
+    } catch (err) {
+      if (err.name === 'TokenExpiredError' || err.name === 'JsonWebTokenError') {
+        return res.status(401).json({ error: "A sessão expirou. Faça login novamente." });
+      }
+      return res.status(403).json({ error: "Token inválido" });
+    }
+    const { name, participants } = req.body; // participants: array de IDs
+
+    const result = await pool.query(
+      "INSERT INTO private_varais (name, owner_id) VALUES ($1, $2) RETURNING *",
+      [name, decoded.id]
+    );
+    const varalId = result.rows[0].id;
+
+    // Adiciona o dono como participante
+    await pool.query(
+      "INSERT INTO private_varal_participants (varal_id, user_id) VALUES ($1, $2)",
+      [varalId, decoded.id]
+    );
+
+    // Adiciona outros participantes se houver
+    if (participants && Array.isArray(participants)) {
+      for (const pId of participants) {
+        if (pId !== decoded.id) {
+          await pool.query(
+            "INSERT INTO private_varal_participants (varal_id, user_id) VALUES ($1, $2) ON CONFLICT DO NOTHING",
+            [varalId, pId]
+          );
+        }
+      }
+    }
+
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Erro ao criar varal" });
+  }
+});
+
+app.get("/varais/:id/items", async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(" ")[1];
+    if (!token) return res.status(401).json({ error: "Não autorizado" });
+    let decoded;
+    try {
+      decoded = jwt.verify(token, JWT_SECRET);
+    } catch (err) {
+      if (err.name === 'TokenExpiredError' || err.name === 'JsonWebTokenError') {
+        return res.status(401).json({ error: "A sessão expirou. Faça login novamente." });
+      }
+      return res.status(403).json({ error: "Token inválido" });
+    }
+    const varalId = req.params.id;
+
+    // Verificar se o usuário participa deste varal
+    const check = await pool.query(
+      "SELECT 1 FROM private_varal_participants WHERE varal_id = $1 AND user_id = $2",
+      [varalId, decoded.id]
+    );
+    if (check.rows.length === 0) return res.status(403).json({ error: "Acesso negado" });
+
+    const itemsRes = await pool.query(
+      "SELECT * FROM user_varal_items WHERE varal_id = $1 ORDER BY created_at ASC",
+      [varalId]
+    );
+    
+    res.json(itemsRes.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Erro ao carregar itens do varal" });
+  }
+});
+
+app.post("/varais/item", async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(" ")[1];
+    if (!token) return res.status(401).json({ error: "Não autorizado" });
+    let decoded;
+    try {
+      decoded = jwt.verify(token, JWT_SECRET);
+    } catch (err) {
+      if (err.name === 'TokenExpiredError' || err.name === 'JsonWebTokenError') {
+        return res.status(401).json({ error: "A sessão expirou. Faça login novamente." });
+      }
+      return res.status(403).json({ error: "Token inválido" });
+    }
+    const { varal_id, type, content, author_name } = req.body;
+
+    // Verificar se o usuário participa deste varal
+    const check = await pool.query(
+      "SELECT 1 FROM private_varal_participants WHERE varal_id = $1 AND user_id = $2",
+      [varal_id, decoded.id]
+    );
+    if (check.rows.length === 0) return res.status(403).json({ error: "Acesso negado" });
+
+    const result = await pool.query(
+      "INSERT INTO user_varal_items (user_id, varal_id, item_type, content, author_name) VALUES ($1, $2, $3, $4, $5) RETURNING *",
+      [decoded.id, varal_id, type, content, author_name || null]
+    );
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Erro ao adicionar item ao varal" });
+  }
+});
+
+app.get("/varais/:id/participants", async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(" ")[1];
+    if (!token) return res.status(401).json({ error: "Não autorizado" });
+    let decoded;
+    try {
+      decoded = jwt.verify(token, JWT_SECRET);
+    } catch (err) {
+      if (err.name === 'TokenExpiredError' || err.name === 'JsonWebTokenError') {
+        return res.status(401).json({ error: "A sessão expirou. Faça login novamente." });
+      }
+      return res.status(403).json({ error: "Token inválido" });
+    }
+    const varalId = req.params.id;
+
+    // Verificar se o usuário participa deste varal
+    const check = await pool.query(
+      "SELECT 1 FROM private_varal_participants WHERE varal_id = $1 AND user_id = $2",
+      [varalId, decoded.id]
+    );
+    if (check.rows.length === 0) return res.status(403).json({ error: "Acesso negado" });
+
+    const result = await pool.query(`
+      SELECT u.id, u.name, u.username, u.last_seen
+      FROM users u
+      JOIN private_varal_participants vp ON u.id = vp.user_id
+      WHERE vp.varal_id = $1
+      ORDER BY u.name ASC
+    `, [varalId]);
+    
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Erro ao listar participantes" });
   }
 });
 
@@ -163,7 +520,15 @@ app.post("/heartbeat", async (req, res) => {
   try {
     const token = req.headers.authorization?.split(" ")[1];
     if (!token) return res.status(401).json({ error: "Não autorizado" });
-    const decoded = jwt.verify(token, JWT_SECRET);
+    let decoded;
+    try {
+      decoded = jwt.verify(token, JWT_SECRET);
+    } catch (err) {
+      if (err.name === 'TokenExpiredError' || err.name === 'JsonWebTokenError') {
+        return res.status(401).json({ error: "A sessão expirou. Faça login novamente." });
+      }
+      return res.status(403).json({ error: "Token inválido" });
+    }
     await updateLastSeen(decoded.id);
     res.json({ success: true });
   } catch (err) {
@@ -189,7 +554,15 @@ app.get("/users/profile/stats", async (req, res) => {
   try {
     const token = req.headers.authorization?.split(" ")[1];
     if (!token) return res.status(401).json({ error: "Não autorizado" });
-    const decoded = jwt.verify(token, JWT_SECRET);
+    let decoded;
+    try {
+      decoded = jwt.verify(token, JWT_SECRET);
+    } catch (err) {
+      if (err.name === 'TokenExpiredError' || err.name === 'JsonWebTokenError') {
+        return res.status(401).json({ error: "A sessão expirou. Faça login novamente." });
+      }
+      return res.status(403).json({ error: "Token inválido" });
+    }
     const userId = decoded.id;
 
     const followers = await pool.query("SELECT COUNT(*) FROM follows WHERE followed_id = $1", [userId]);
@@ -209,7 +582,15 @@ app.get("/users/followers", async (req, res) => {
   try {
     const token = req.headers.authorization?.split(" ")[1];
     if (!token) return res.status(401).json({ error: "Não autorizado" });
-    const decoded = jwt.verify(token, JWT_SECRET);
+    let decoded;
+    try {
+      decoded = jwt.verify(token, JWT_SECRET);
+    } catch (err) {
+      if (err.name === 'TokenExpiredError' || err.name === 'JsonWebTokenError') {
+        return res.status(401).json({ error: "A sessão expirou. Faça login novamente." });
+      }
+      return res.status(403).json({ error: "Token inválido" });
+    }
     const userId = decoded.id;
 
     const result = await pool.query(`
@@ -244,7 +625,15 @@ app.get("/messages/:otherId", async (req, res) => {
   try {
     const token = req.headers.authorization?.split(" ")[1];
     if (!token) return res.status(401).json({ error: "Não autorizado" });
-    const decoded = jwt.verify(token, JWT_SECRET);
+    let decoded;
+    try {
+      decoded = jwt.verify(token, JWT_SECRET);
+    } catch (err) {
+      if (err.name === 'TokenExpiredError' || err.name === 'JsonWebTokenError') {
+        return res.status(401).json({ error: "A sessão expirou. Faça login novamente." });
+      }
+      return res.status(403).json({ error: "Token inválido" });
+    }
     const myId = decoded.id;
     const otherId = req.params.otherId;
 
@@ -268,7 +657,15 @@ app.get("/messages/unread/count", async (req, res) => {
   try {
     const token = req.headers.authorization?.split(" ")[1];
     if (!token) return res.status(401).json({ error: "Não autorizado" });
-    const decoded = jwt.verify(token, JWT_SECRET);
+    let decoded;
+    try {
+      decoded = jwt.verify(token, JWT_SECRET);
+    } catch (err) {
+      if (err.name === 'TokenExpiredError' || err.name === 'JsonWebTokenError') {
+        return res.status(401).json({ error: "A sessão expirou. Faça login novamente." });
+      }
+      return res.status(403).json({ error: "Token inválido" });
+    }
     
     const result = await pool.query(
       "SELECT COUNT(*) FROM messages WHERE receiver_id = $1 AND is_read = false",
@@ -285,7 +682,15 @@ app.get("/conversations", async (req, res) => {
   try {
     const token = req.headers.authorization?.split(" ")[1];
     if (!token) return res.status(401).json({ error: "Não autorizado" });
-    const decoded = jwt.verify(token, JWT_SECRET);
+    let decoded;
+    try {
+      decoded = jwt.verify(token, JWT_SECRET);
+    } catch (err) {
+      if (err.name === 'TokenExpiredError' || err.name === 'JsonWebTokenError') {
+        return res.status(401).json({ error: "A sessão expirou. Faça login novamente." });
+      }
+      return res.status(403).json({ error: "Token inválido" });
+    }
     const myId = decoded.id;
 
     // Busca usuários com quem houve troca de mensagens, a última mensagem e count de não lidas
@@ -317,7 +722,15 @@ app.post("/messages/read/:otherId", async (req, res) => {
   try {
     const token = req.headers.authorization?.split(" ")[1];
     if (!token) return res.status(401).json({ error: "Não autorizado" });
-    const decoded = jwt.verify(token, JWT_SECRET);
+    let decoded;
+    try {
+      decoded = jwt.verify(token, JWT_SECRET);
+    } catch (err) {
+      if (err.name === 'TokenExpiredError' || err.name === 'JsonWebTokenError') {
+        return res.status(401).json({ error: "A sessão expirou. Faça login novamente." });
+      }
+      return res.status(403).json({ error: "Token inválido" });
+    }
     const myId = decoded.id;
     const otherId = req.params.otherId;
 
@@ -336,7 +749,15 @@ app.delete("/conversations/:otherId", async (req, res) => {
   try {
     const token = req.headers.authorization?.split(" ")[1];
     if (!token) return res.status(401).json({ error: "Não autorizado" });
-    const decoded = jwt.verify(token, JWT_SECRET);
+    let decoded;
+    try {
+      decoded = jwt.verify(token, JWT_SECRET);
+    } catch (err) {
+      if (err.name === 'TokenExpiredError' || err.name === 'JsonWebTokenError') {
+        return res.status(401).json({ error: "A sessão expirou. Faça login novamente." });
+      }
+      return res.status(403).json({ error: "Token inválido" });
+    }
     const myId = decoded.id;
     const otherId = req.params.otherId;
 
@@ -356,7 +777,15 @@ app.post("/messages", async (req, res) => {
   try {
     const token = req.headers.authorization?.split(" ")[1];
     if (!token) return res.status(401).json({ error: "Não autorizado" });
-    const decoded = jwt.verify(token, JWT_SECRET);
+    let decoded;
+    try {
+      decoded = jwt.verify(token, JWT_SECRET);
+    } catch (err) {
+      if (err.name === 'TokenExpiredError' || err.name === 'JsonWebTokenError') {
+        return res.status(401).json({ error: "A sessão expirou. Faça login novamente." });
+      }
+      return res.status(403).json({ error: "Token inválido" });
+    }
     const { text, receiver_id } = req.body;
     
     const result = await pool.query(
@@ -387,7 +816,15 @@ app.post("/post", upload.single("media"), async (req, res) => {
     const token = req.headers.authorization?.split(" ")[1];
     if (!token) return res.status(401).json({ error: "Não autorizado" });
 
-    const decoded = jwt.verify(token, JWT_SECRET);
+    let decoded;
+    try {
+      decoded = jwt.verify(token, JWT_SECRET);
+    } catch (err) {
+      if (err.name === 'TokenExpiredError' || err.name === 'JsonWebTokenError') {
+        return res.status(401).json({ error: "A sessão expirou. Faça login novamente." });
+      }
+      return res.status(403).json({ error: "Token inválido" });
+    }
     const author_id = decoded.id;
     await updateLastSeen(author_id);
 
@@ -395,45 +832,41 @@ app.post("/post", upload.single("media"), async (req, res) => {
       return res.status(400).json({ error: "Nenhum arquivo enviado" });
     }
     const caption = req.body.caption || "";
+    const isPrivateFlag = typeof req.body.is_private === "string" ? req.body.is_private === "true" : !!req.body.is_private;
     
-    const fileName = req.file.filename;
-    const filePath = `${author_id}/${fileName}`;
-    const type = req.file.mimetype.startsWith("video") ? "video" : "image";
-
-    console.log(`[Upload] Arquivo recebido: ${filePath} (${req.file.size} bytes). Enviando ao Supabase...`);
+    // Configurações do arquivo para o Supabase
+    const fileExt = req.file.originalname.split('.').pop();
+    const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+    const filePath = fileName; // Vai direto para a raiz do bucket 'media'
     
-    // Ler arquivo do disco
-    const fileBuffer = fs.readFileSync(req.file.path);
+    const isVideo = req.file.mimetype.startsWith("video") || 
+                    ['mp4', 'webm', 'ogg', 'mov', 'quicktime'].some(ext => fileExt.toLowerCase() === ext);
+    const type = isVideo ? "video" : "image";
 
-    // Limpar arquivo temporário do disco ANTES do upload (já lemos para o buffer)
-    fs.unlink(req.file.path, () => {});
+    console.log(`[Upload Cloud] Iniciando: ${req.file.originalname} | Mime: ${req.file.mimetype} | Tipo: ${type}`);
 
-    // Upload via SDK do Supabase
-    const { data: uploadData, error: uploadError } = await supabase.storage
-      .from("clothesline-uploads")
-      .upload(filePath, fileBuffer, {
+    // UPLOAD PARA SUPABASE STORAGE
+    const { data, error: uploadError } = await supabase.storage
+      .from('media') // Nome do seu bucket no Supabase
+      .upload(filePath, req.file.buffer, {
         contentType: req.file.mimetype,
-        upsert: true,
-        cacheControl: '3600'
+        upsert: false
       });
 
-    // Liberar buffer da memória imediatamente
-    // (fileBuffer sai de escopo e será coletado pelo GC)
-
     if (uploadError) {
-      console.error("[ERRO SUPABASE]:", JSON.stringify(uploadError, null, 2));
-      return res.status(502).json({ error: "Erro Supabase Storage", details: uploadError.message });
+      console.error("[ERRO SUPABASE UPLOAD]:", uploadError);
+      throw uploadError;
     }
 
-    console.log(`[Upload] Sucesso!`);
+    // Gerar URL Pública
+    const { data: publicData } = supabase.storage.from('media').getPublicUrl(filePath);
+    const media_url = publicData.publicUrl;
 
-    // URL pública (padrão fixo do Supabase)
-    const media_url = `${SUPABASE_URL}/storage/v1/object/public/clothesline-uploads/${filePath}`;
-    console.log(`[Upload] URL: ${media_url}`);
+    console.log(`[Upload Cloud] Sucesso! URL: ${media_url}`);
 
     const result = await pool.query(
-      "INSERT INTO posts (user_id, media_url, type, caption, author_id, created_at, expires_at) VALUES ($1,$2,$3,$4,$5,NOW(), NOW() + INTERVAL '48 hours') RETURNING *",
-      [author_id, media_url, type, caption, author_id]
+      "INSERT INTO posts (user_id, media_url, type, caption, author_id, created_at, expires_at, is_private) VALUES ($1,$2,$3,$4,$5,NOW(), NOW() + INTERVAL '48 hours', $6) RETURNING *",
+      [author_id, media_url, type, caption, author_id, isPrivateFlag]
     );
 
     res.json(result.rows[0]);
@@ -459,7 +892,37 @@ app.post("/post", upload.single("media"), async (req, res) => {
 app.post("/post/:id/like", async (req, res) => {
   try {
     const postId = req.params.id;
+    const token = req.headers.authorization?.split(" ")[1];
+    let actorId = null;
+    if (token) {
+        try {
+            let decoded;
+    try {
+      decoded = jwt.verify(token, JWT_SECRET);
+    } catch (err) {
+      if (err.name === 'TokenExpiredError' || err.name === 'JsonWebTokenError') {
+        return res.status(401).json({ error: "A sessão expirou. Faça login novamente." });
+      }
+      return res.status(403).json({ error: "Token inválido" });
+    }
+            actorId = decoded.id;
+        } catch(e) {}
+    }
+
     await pool.query("UPDATE posts SET likes = COALESCE(likes, 0) + 1 WHERE id = $1", [postId]);
+    
+    // Notificação
+    if (actorId) {
+        const postRes = await pool.query("SELECT user_id FROM posts WHERE id = $1", [postId]);
+        const postOwnerId = postRes.rows[0]?.user_id;
+        if (postOwnerId && postOwnerId !== actorId) {
+            await pool.query(
+                "INSERT INTO notifications (user_id, actor_id, type, post_id) VALUES ($1, $2, 'like', $3)",
+                [postOwnerId, actorId, postId]
+            );
+        }
+    }
+
     res.json({ success: true });
   } catch (err) {
     console.error(err);
@@ -471,7 +934,15 @@ app.post("/post/:id/share", async (req, res) => {
   try {
     const token = req.headers.authorization?.split(" ")[1];
     if (!token) return res.status(401).json({ error: "Não autorizado" });
-    const decoded = jwt.verify(token, JWT_SECRET);
+    let decoded;
+    try {
+      decoded = jwt.verify(token, JWT_SECRET);
+    } catch (err) {
+      if (err.name === 'TokenExpiredError' || err.name === 'JsonWebTokenError') {
+        return res.status(401).json({ error: "A sessão expirou. Faça login novamente." });
+      }
+      return res.status(403).json({ error: "Token inválido" });
+    }
     const sharerId = decoded.id;
     const originalPostId = req.params.id;
 
@@ -502,14 +973,37 @@ app.post("/post/:id/comment", async (req, res) => {
     const token = req.headers.authorization?.split(" ")[1];
     if (!token) return res.status(401).json({ error: "Não autorizado" });
 
-    const decoded = jwt.verify(token, JWT_SECRET);
-    const author_id = decoded.id;
-    await updateLastSeen(author_id);
+    let decoded;
+    try {
+      decoded = jwt.verify(token, JWT_SECRET);
+    } catch (err) {
+      if (err.name === 'TokenExpiredError' || err.name === 'JsonWebTokenError') {
+        return res.status(401).json({ error: "A sessão expirou. Faça login novamente." });
+      }
+      return res.status(403).json({ error: "Token inválido" });
+    }
+    const authorId = decoded.id;
+    await updateLastSeen(authorId);
 
     const postId = req.params.id;
     const { text } = req.body;
-    await pool.query("INSERT INTO comments (post_id, text, author_id) VALUES ($1, $2, $3)", [postId, text, author_id]);
-    res.json({ success: true, text });
+    
+    const result = await pool.query(
+      "INSERT INTO comments (post_id, author_id, text) VALUES ($1, $2, $3) RETURNING *",
+      [postId, authorId, text]
+    );
+
+    // Notificação
+    const postRes = await pool.query("SELECT user_id FROM posts WHERE id = $1", [postId]);
+    const postOwnerId = postRes.rows[0]?.user_id;
+    if (postOwnerId && postOwnerId !== authorId) {
+        await pool.query(
+            "INSERT INTO notifications (user_id, actor_id, type, post_id) VALUES ($1, $2, 'comment', $3)",
+            [postOwnerId, authorId, postId]
+        );
+    }
+
+    res.json(result.rows[0]);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Erro ao comentar" });
@@ -521,7 +1015,15 @@ app.delete("/post/:id", async (req, res) => {
     const token = req.headers.authorization?.split(" ")[1];
     if (!token) return res.status(401).json({ error: "Não autorizado" });
 
-    const decoded = jwt.verify(token, JWT_SECRET);
+    let decoded;
+    try {
+      decoded = jwt.verify(token, JWT_SECRET);
+    } catch (err) {
+      if (err.name === 'TokenExpiredError' || err.name === 'JsonWebTokenError') {
+        return res.status(401).json({ error: "A sessão expirou. Faça login novamente." });
+      }
+      return res.status(403).json({ error: "Token inválido" });
+    }
     const userId = decoded.id;
     const postId = req.params.id;
 
@@ -547,16 +1049,33 @@ app.post("/follow/:id", async (req, res) => {
   try {
     const token = req.headers.authorization?.split(" ")[1];
     if (!token) return res.status(401).json({ error: "Não autorizado" });
-    const decoded = jwt.verify(token, JWT_SECRET);
-    const follower_id = decoded.id;
-    const followed_id = req.params.id;
+    let decoded;
+    try {
+      decoded = jwt.verify(token, JWT_SECRET);
+    } catch (err) {
+      if (err.name === 'TokenExpiredError' || err.name === 'JsonWebTokenError') {
+        return res.status(401).json({ error: "A sessão expirou. Faça login novamente." });
+      }
+      return res.status(403).json({ error: "Token inválido" });
+    }
+    const followerId = decoded.id;
+    const followedId = req.params.id;
 
-    if (follower_id == followed_id) return res.status(400).json({ error: "Você não pode seguir você mesmo" });
+    if (followerId == followedId) return res.status(400).json({ error: "Você não pode seguir você mesmo" });
 
     await pool.query(
       "INSERT INTO follows (follower_id, followed_id) VALUES ($1, $2) ON CONFLICT DO NOTHING",
-      [follower_id, followed_id]
+      [followerId, followedId]
     );
+
+    // Notificação
+    if (followerId != followedId) {
+        await pool.query(
+            "INSERT INTO notifications (user_id, actor_id, type) VALUES ($1, $2, 'follow')",
+            [followedId, followerId]
+        );
+    }
+
     res.json({ success: true });
   } catch (err) {
     console.error(err);
@@ -568,7 +1087,15 @@ app.delete("/follow/:id", async (req, res) => {
   try {
     const token = req.headers.authorization?.split(" ")[1];
     if (!token) return res.status(401).json({ error: "Não autorizado" });
-    const decoded = jwt.verify(token, JWT_SECRET);
+    let decoded;
+    try {
+      decoded = jwt.verify(token, JWT_SECRET);
+    } catch (err) {
+      if (err.name === 'TokenExpiredError' || err.name === 'JsonWebTokenError') {
+        return res.status(401).json({ error: "A sessão expirou. Faça login novamente." });
+      }
+      return res.status(403).json({ error: "Token inválido" });
+    }
     const follower_id = decoded.id;
     const followed_id = req.params.id;
 
@@ -589,7 +1116,15 @@ app.get("/feed", async (req, res) => {
     let userId = null;
     if (token) {
       try {
-        const decoded = jwt.verify(token, JWT_SECRET);
+        let decoded;
+    try {
+      decoded = jwt.verify(token, JWT_SECRET);
+    } catch (err) {
+      if (err.name === 'TokenExpiredError' || err.name === 'JsonWebTokenError') {
+        return res.status(401).json({ error: "A sessão expirou. Faça login novamente." });
+      }
+      return res.status(403).json({ error: "Token inválido" });
+    }
         userId = decoded.id;
       } catch(e) {}
     }
@@ -609,7 +1144,7 @@ app.get("/feed", async (req, res) => {
       LEFT JOIN follows f ON f.followed_id = p.author_id AND f.follower_id = $1
       LEFT JOIN comments c ON c.post_id = p.id
       LEFT JOIN users cu ON c.author_id = cu.id
-      WHERE (p.expires_at > NOW() OR p.expires_at IS NULL)
+      WHERE (p.expires_at > NOW() OR p.expires_at IS NULL) AND p.is_private = false
       GROUP BY p.id, u.name, f.follower_id
       ORDER BY is_followed DESC, p.created_at ASC
     `, [userId]);
@@ -627,7 +1162,15 @@ app.get("/feed/user/:id", async (req, res) => {
     let userId = null;
     if (token) {
       try {
-        const decoded = jwt.verify(token, JWT_SECRET);
+        let decoded;
+    try {
+      decoded = jwt.verify(token, JWT_SECRET);
+    } catch (err) {
+      if (err.name === 'TokenExpiredError' || err.name === 'JsonWebTokenError') {
+        return res.status(401).json({ error: "A sessão expirou. Faça login novamente." });
+      }
+      return res.status(403).json({ error: "Token inválido" });
+    }
         userId = decoded.id;
       } catch(e) {}
     }
@@ -648,7 +1191,7 @@ app.get("/feed/user/:id", async (req, res) => {
       LEFT JOIN follows f ON f.followed_id = p.author_id AND f.follower_id = $1
       LEFT JOIN comments c ON c.post_id = p.id
       LEFT JOIN users cu ON c.author_id = cu.id
-      WHERE p.author_id = $2 AND (p.expires_at > NOW() OR p.expires_at IS NULL)
+      WHERE p.author_id = $2 AND (p.expires_at > NOW() OR p.expires_at IS NULL) AND p.is_private = false
       GROUP BY p.id, u.name, f.follower_id
       ORDER BY p.created_at DESC
     `, [userId, targetUserId]);
@@ -660,6 +1203,61 @@ app.get("/feed/user/:id", async (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
+/* NOTIFICAÇÕES */
+app.get("/notifications", async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(" ")[1];
+    if (!token) return res.status(401).json({ error: "Não autorizado" });
+    let decoded;
+    try {
+      decoded = jwt.verify(token, JWT_SECRET);
+    } catch (err) {
+      if (err.name === 'TokenExpiredError' || err.name === 'JsonWebTokenError') {
+        return res.status(401).json({ error: "A sessão expirou. Faça login novamente." });
+      }
+      return res.status(403).json({ error: "Token inválido" });
+    }
+    const userId = decoded.id;
+
+    const result = await pool.query(`
+      SELECT n.*, u.name as actor_name, u.username as actor_username 
+      FROM notifications n
+      JOIN users u ON n.actor_id = u.id
+      WHERE n.user_id = $1
+      ORDER BY n.created_at DESC
+      LIMIT 50
+    `, [userId]);
+
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Erro ao carregar notificações" });
+  }
+});
+
+app.post("/notifications/read-all", async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(" ")[1];
+    if (!token) return res.status(401).json({ error: "Não autorizado" });
+    let decoded;
+    try {
+      decoded = jwt.verify(token, JWT_SECRET);
+    } catch (err) {
+      if (err.name === 'TokenExpiredError' || err.name === 'JsonWebTokenError') {
+        return res.status(401).json({ error: "A sessão expirou. Faça login novamente." });
+      }
+      return res.status(403).json({ error: "Token inválido" });
+    }
+    const userId = decoded.id;
+
+    await pool.query("UPDATE notifications SET is_read = true WHERE user_id = $1", [userId]);
+    res.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Erro ao atualizar notificações" });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`Servidor rodando na porta ${PORT}`);
 });

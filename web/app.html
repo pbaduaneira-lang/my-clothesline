@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>My Clothesline - Mobile App</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/css/globals.css">
+    <link rel="stylesheet" href="assets/css/mobile.css">
+    <link rel="stylesheet" href="assets/css/mobile-varal-particular.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+
+<header>
+    <div class="topbar glass">
+        <!-- FAIXA 1: IDENTIDADE -->
+        <div class="header-row identity-row">
+            <div class="logo-group" style="align-items: flex-start;">
+                <div class="logo" onclick="location.reload()">
+                    <h1 style="font-size: 22px; line-height: 1; margin: 0; color: var(--primary);">My Clothesline</h1>
+                </div>
+            </div>
+
+            <div id="userProfileHeader" style="display: none; align-items: center; gap: 8px;">
+                <div id="userNameHeaderMobile" style="font-size: 14px; font-weight: 700; color: var(--text-main);"></div>
+                <div id="userInitial" class="user-avatar" style="width: 32px; height: 32px; font-size: 14px;">?</div>
+            </div>
+        </div>
+
+        <!-- FAIXA 2: AÇÕES -->
+        <div class="header-row actions-row">
+            <button class="icon-btn-premium btn-msg" onclick="abrirMessages()">
+                <i data-lucide="message-circle" style="width: 24px; height: 24px;"></i>
+                <span id="msgNotificationCount" class="badge">0</span>
+            </button>
+            <button class="icon-btn-premium btn-notif" onclick="abrirNotificacoes()">
+                <i data-lucide="bell" style="width: 24px; height: 24px;"></i>
+            </button>
+            <button class="icon-btn-premium btn-users" onclick="toggleOnlineList()">
+                <i data-lucide="users" style="width: 24px; height: 24px;"></i>
+                <span id="onlineCount" class="badge">0</span>
+            </button>
+        </div>
+    </div>
+</header>
+
+<div id="mobile-focus-area" style="display: none; height: 350px;">
+    <div id="mobile-focus-content" style="height: 100%;">
+        <div style="color: #666; font-size: 14px; font-weight: 600;">Selecione um item no varal</div>
+    </div>
+</div>
+
+<div id="scene">
+    <div id="feed"></div>
+</div>
+
+<!-- MODAIS COMPARTILHADOS (ESTRUTURA SIMPLIFICADA) -->
+<div id="modalAuth" class="modal">
+    <div class="auth-box modal-content" id="loginForm">
+        <h2>Entrar</h2>
+        <input type="text" id="loginUsername" placeholder="Usuário">
+        <input type="password" id="loginPassword" placeholder="Senha">
+        <button onclick="fazerLogin()">Entrar</button>
+        <div class="auth-toggle" onclick="toggleAuth(false)">Não tem conta? <b>Registrar</b></div>
+    </div>
+    <div class="auth-box modal-content" id="registerForm" style="display:none;">
+        <h2>Criar Conta</h2>
+        <input type="text" id="regName" placeholder="Nome Completo">
+        <input type="text" id="regUsername" placeholder="Usuário">
+        <input type="password" id="regPassword" placeholder="Senha">
+        <div style="text-align: left; width: 100%; margin-top: 10px;">
+            <label style="font-size: 11px; font-weight: 700; color: #666; margin-left: 5px;">Data de Nascimento</label>
+            <input type="date" id="regBirthDate" style="margin-top: 4px;">
+        </div>
+        <input type="text" id="regResidence" placeholder="Onde você reside? (Cidade/Estado)">
+        <button onclick="fazerRegistro()">Criar Conta</button>
+        <div class="auth-toggle" onclick="toggleAuth(true)">Já tem conta? <b>Entrar</b></div>
+    </div>
+</div>
+
+<div id="modalUpload" class="modal" style="z-index: 10001;">
+    <div class="modal-content glass">
+        <div class="auth-box">
+            <h3 style="margin-bottom: 20px;">Pendurar Novo Post</h3>
+            
+            <div style="display: flex; gap: 10px; margin-bottom: 15px; width: 100%;">
+                <label for="mediaFile" style="flex: 1; background: #e0e7ff; color: #4338ca; padding: 12px; border-radius: 12px; font-weight: 800; cursor: pointer; text-align: center; border: 2px dashed #818cf8; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px;">
+                    <i data-lucide="image" style="width: 24px; height: 24px;"></i> Galeria
+                </label>
+                <input type="file" id="mediaFile" accept="image/*,video/*" style="display: none;" onchange="previewMediaUploadMobile(event)">
+                
+                <button onclick="colarMediaAreaTransferenciaMobile()" style="flex: 1; background: #f0fdf4; color: #15803d; border: 2px dashed #4ade80; padding: 12px; border-radius: 12px; font-weight: 800; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px;">
+                    <i data-lucide="clipboard-paste" style="width: 24px; height: 24px;"></i> Colar Cópia
+                </button>
+            </div>
+            
+            <div id="mediaPreviewContainerMobile" style="width: 100%; min-height: 100px; background: #f8fafc; border-radius: 12px; margin-bottom: 15px; display: none; align-items: center; justify-content: center; overflow: hidden; position: relative;">
+                <img id="imagePreviewMobile" style="max-width: 100%; max-height: 200px; display: none; border-radius: 8px;">
+                <video id="videoPreviewMobile" style="max-width: 100%; max-height: 200px; display: none; border-radius: 8px;" controls muted></video>
+                <button onclick="limparMediaUploadMobile()" style="position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.5); color: white; border: none; border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;"><i data-lucide="x" style="width: 16px;"></i></button>
+            </div>
+
+            <textarea id="caption" placeholder="O que você está pendurando?" style="height:80px;"></textarea>
+            <div id="uploadActionsContainer" style="display: flex; flex-direction: column; gap: 10px;">
+                <button id="btnPostarGeral" onclick="pendurarPost()" style="background: var(--primary); color: white; border: none; padding: 12px; border-radius: 12px; font-weight: 700;">Pendurar no Feed</button>
+                <button id="btnPostarPrivado" onclick="pendurarNoVaralParticular()" style="background: #10b981; color: white; border: none; padding: 12px; border-radius: 12px; font-weight: 700; display: none;">Postar no Varal Particular</button>
+            </div>
+            <button onclick="fecharUpload()" style="background:#eee; color:#666; margin-top: 10px; width: 100%; border: none; padding: 10px; border-radius: 12px;">Cancelar</button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL MENSAGENS -->
+<div id="modalMessages" class="modal">
+    <div class="modal-content glass" style="width: 100%; height: 100%; max-width: 100%; border-radius: 0; display: flex; flex-direction: column; padding: 0;">
+        <div style="padding: 15px 20px; border-bottom: 1px solid var(--glass-border); display: flex; justify-content: space-between; align-items: center; background: white;">
+            <h3 style="margin: 0;">Mensagens</h3>
+            <button onclick="fecharMessages()" class="icon-btn-premium"><i data-lucide="x"></i></button>
+        </div>
+        <div id="chatMobileView" style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
+            <div id="chatListContainerMobile" style="flex: 1; overflow-y: auto;"></div>
+            <div id="chatConversationMobile" style="display: none; flex: 1; flex-direction: column; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 10;">
+                <div style="padding: 15px 20px; border-bottom: 1px solid var(--glass-border); display: flex; align-items: center; gap: 10px;">
+                    <button onclick="voltarParaListaChat()" class="icon-btn-premium" style="width: 32px; height: 32px;"><i data-lucide="arrow-left"></i></button>
+                    <div id="chatHeaderMobile" style="font-weight: 700;">Chat</div>
+                </div>
+                <div id="chatMessagesMobile" style="flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px;"></div>
+                <div style="padding: 15px; border-top: 1px solid var(--glass-border); display: flex; gap: 8px;">
+                    <input type="text" id="msgInputMobile" class="search-box" style="flex: 1; height: 42px;" placeholder="Digite algo...">
+                    <button onclick="enviarMensagemMobile()" class="icon-btn-premium" style="background: var(--primary); color: white; border: none; width: 42px; height: 42px;"><i data-lucide="send"></i></button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL NOTIFICAÇÕES -->
+<div id="modalNotifications" class="modal">
+    <div class="modal-content glass" style="width: 100%; height: 100%; max-width: 100%; border-radius: 0; padding: 0;">
+        <div style="padding: 15px 20px; border-bottom: 1px solid var(--glass-border); display: flex; justify-content: space-between; align-items: center; background: white;">
+            <h3 style="margin: 0;">Notificações</h3>
+            <button onclick="fecharNotificacoes()" class="icon-btn-premium"><i data-lucide="x"></i></button>
+        </div>
+        <div id="notificationsContainerMobile" style="flex: 1; overflow-y: auto; padding: 10px;"></div>
+    </div>
+</div>
+
+<!-- MODAL COMENTÁRIOS MOBILE (COMPLETO) -->
+<div id="modalCommentMobile" class="modal">
+    <div class="modal-content glass" style="width: 100%; height: 80%; max-width: 500px; border-radius: 30px 30px 0 0; position: fixed; bottom: 0; padding: 0; display: flex; flex-direction: column;">
+        <div style="padding: 20px; border-bottom: 1px solid var(--glass-border); display: flex; justify-content: space-between; align-items: center; background: white; border-radius: 30px 30px 0 0;">
+            <h3 style="margin: 0; display: flex; align-items: center; gap: 10px; color: var(--primary);">
+                <i data-lucide="message-circle"></i> Comentários
+            </h3>
+            <button onclick="fecharCommentMobile()" class="icon-btn-premium"><i data-lucide="x"></i></button>
+        </div>
+        
+        <!-- Lista de Comentários -->
+        <div id="mobileCommentsList" style="flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 12px; background: #fafafa;">
+            <!-- Comentários renderizados via JS -->
+        </div>
+
+        <!-- Campo de Input -->
+        <div style="padding: 20px; border-top: 1px solid var(--glass-border); background: white; padding-bottom: calc(20px + env(safe-area-inset-bottom));">
+            <div style="display: flex; gap: 10px; background: #f1f5f9; padding: 5px; border-radius: 15px;">
+                <input type="text" id="mobileCommentInput" placeholder="Adicione um comentário..." 
+                       style="flex: 1; border: none; background: transparent; padding: 10px 15px; font-family: 'Outfit'; font-size: 15px; outline: none;">
+                <button id="btnEnviarComentarioMobile" class="icon-btn-premium" style="background: var(--primary); color: white; width: 45px; height: 45px;">
+                    <i data-lucide="send"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+
+<!-- MODAL ANIVERSARIANTES -->
+<div id="modalAnniversaries" class="modal">
+    <div class="modal-content glass" style="width: 100%; height: 100%; max-width: 100%; border-radius: 0; padding: 0;">
+        <div style="padding: 15px 20px; border-bottom: 1px solid var(--glass-border); display: flex; justify-content: space-between; align-items: center; background: white;">
+            <h3 style="margin: 0; color: #f43f5e; display: flex; align-items: center; gap: 8px;">
+                <i data-lucide="cake"></i> Aniversariantes do Mês
+            </h3>
+            <button onclick="fecharAniversarios()" class="icon-btn-premium"><i data-lucide="x"></i></button>
+        </div>
+        <div id="anniversariesContainerMobile" style="flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 15px;">
+            <div style="text-align: center; color: #666;">Carregando aniversariantes...</div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL VARAL PARTICULAR MOBILE (APENAS CABEÇALHO POR ENQUANTO) -->
+<div id="modalVaralParticular" class="modal" style="display: none; background: #f0f7ff; width: 100vw; height: 100vh; position: fixed; top: 0; left: 0; z-index: 9999; flex-direction: column; align-items: stretch; justify-content: flex-start;">
+    <header class="mobile-varal-header" style="width: 100%; height: 45px; background: white; display: flex; align-items: center; justify-content: space-between; padding: 0 15px; border-bottom: 2px solid #1877f2; box-sizing: border-box;">
+        <div class="logo-section" style="display: flex; flex-direction: row; align-items: center; gap: 8px;">
+            <h1 style="margin: 0; font-size: 14px; font-weight: 900; color: #1c1e21; text-transform: uppercase;">Varal Particular</h1>
+            <span style="color: #ccc;">|</span>
+            <h2 id="display-nome-varal-mobile" style="margin: 0; font-size: 13px; font-weight: 600; color: #1877f2;">Família</h2>
+        </div>
+        <button onclick="fecharVaralParticular()" style="background: linear-gradient(135deg, #f43f5e, #fb7185); color: white; border: none; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 12px rgba(244, 63, 94, 0.3);">
+            <i data-lucide="x" style="width: 24px; height: 24px;"></i>
+        </button>
+    </header>
+    
+    <!-- FAIXA DE PARTICIPANTES (ESTILO STRIP) -->
+    <div class="mobile-pessoas-strip" id="mobile-participants-list">
+        <!-- JS renderizará avatares aqui -->
+    </div>
+
+    <div id="mobile-varal-canvas" style="display: flex; align-items: flex-start; justify-content: flex-start; gap: 15px; overflow-x: auto; padding: 10px 15px; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; box-sizing: border-box;">
+        <!-- JS renderizará 3 fotos aqui -->
+        <div style="color: #94a3b8; padding-top: 20px; width: 100%; text-align: center;">Carregando fotos...</div>
+    </div>
+
+    <!-- BARRA DE AÇÕES PREMIUM NO RODAPÉ -->
+    <footer style="height: 85px; background: white; display: flex; align-items: center; justify-content: space-around; padding: 0 10px; border-top: 2px solid #f0f7ff; flex-shrink: 0; padding-bottom: env(safe-area-inset-bottom);">
+        <button onclick="abrirUpload('private')" style="display: flex; flex-direction: column; align-items: center; gap: 4px; background: none; border: none; color: #1d4ed8; font-family: 'Outfit'; font-weight: 800; font-size: 11px;">
+            <div style="width: 42px; height: 42px; background: #eff6ff; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 2px; border: 1px solid #3b82f6;">
+                <i data-lucide="plus-circle" style="width: 24px; height: 24px;"></i>
+            </div>
+            Pendurar
+        </button>
+        <button onclick="adicionarMensagemMobile()" style="display: flex; flex-direction: column; align-items: center; gap: 4px; background: none; border: none; color: #b45309; font-family: 'Outfit'; font-weight: 800; font-size: 11px;">
+            <div style="width: 42px; height: 42px; background: #fffbeb; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 2px; border: 1px solid #f59e0b;">
+                <i data-lucide="message-square" style="width: 24px; height: 24px;"></i>
+            </div>
+            Mensagens
+        </button>
+        <button onclick="abrirBuscaMobile()" style="display: flex; flex-direction: column; align-items: center; gap: 4px; background: none; border: none; color: #15803d; font-family: 'Outfit'; font-weight: 800; font-size: 11px;">
+            <div style="width: 42px; height: 42px; background: #f0fdf4; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 2px; border: 1px solid #22c55e;">
+                <i data-lucide="user-plus" style="width: 24px; height: 24px;"></i>
+            </div>
+            Incluir
+        </button>
+    </footer>
+</div>
+
+<!-- MODAL BUSCA VARAL MOBILE -->
+<div id="modalBuscaVaralMobile" class="modal">
+    <div class="modal-content glass" style="width:90%; border-radius:30px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <h3 style="margin:0;">Incluir Pessoa</h3>
+            <button onclick="fecharBuscaMobile()" class="icon-btn-premium"><i data-lucide="x"></i></button>
+        </div>
+        <input type="text" id="inputBuscaMobileVaral" placeholder="Buscar..." class="search-box" style="width:100%; margin-bottom:15px;" oninput="renderSugestoesMobile(this.value)">
+        <div id="suggestions-list-mobile" style="display:flex; flex-direction:column; gap:10px; max-height:300px; overflow-y:auto;"></div>
+    </div>
+</div>
+
+<!-- MODAL SELECIONAR VARAL MOBILE -->
+<div id="modalSelectVaralMobile" class="modal">
+    <div class="modal-content glass" style="width: 100%; height: 100%; border-radius: 0; padding: 0; display: flex; flex-direction: column;">
+        <div style="padding: 20px; border-bottom: 1px solid var(--glass-border); display: flex; justify-content: space-between; align-items: center; background: white;">
+            <h3 style="margin: 0; color: var(--primary); display: flex; align-items: center; gap: 10px;">
+                <i data-lucide="layout-grid"></i> Seus Varais
+            </h3>
+            <button onclick="fecharSelecaoVaralMobile()" class="icon-btn-premium"><i data-lucide="x"></i></button>
+        </div>
+        
+        <div id="selectVaralListMobile" style="flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 15px;">
+            <!-- Varais aparecerão aqui -->
+        </div>
+
+        <div style="padding: 20px; border-top: 1px solid var(--glass-border); background: #f8fafc;">
+            <button class="btn-pendurar-premium" onclick="abrirModalCriarVaralMobile()" style="width: 100%; height: 55px; justify-content: center; background: white; border: 2px dashed var(--primary); color: var(--primary);">
+                <i data-lucide="plus"></i> Criar Novo Varal
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL CRIAR VARAL MOBILE -->
+<div id="modalCreateVaralMobile" class="modal" style="z-index: 10005;">
+    <div class="modal-content glass" style="width: 100%; height: 100%; border-radius: 0; padding: 0; display: flex; flex-direction: column;">
+        <div style="padding: 20px; border-bottom: 1px solid var(--glass-border); display: flex; justify-content: space-between; align-items: center; background: white;">
+            <h3 style="margin: 0; color: var(--primary); display: flex; align-items: center; gap: 10px;">
+                <i data-lucide="plus-circle"></i> Novo Varal
+            </h3>
+            <button onclick="fecharModalCriarVaralMobile()" class="icon-btn-premium"><i data-lucide="x"></i></button>
+        </div>
+        
+        <div style="flex: 1; overflow-y: auto; padding: 25px; display: flex; flex-direction: column; gap: 20px;">
+            <div>
+                <label style="display: block; font-size: 13px; font-weight: 800; margin-bottom: 8px; color: #64748b;">NOME DO VARAL</label>
+                <input type="text" id="newVaralNameMobile" placeholder="Ex: Viagem 2024, Família..." 
+                       style="width: 100%; padding: 15px; border: 1px solid #e2e8f0; border-radius: 12px; font-family: 'Outfit'; font-size: 16px;">
+            </div>
+            
+            <div>
+                <label style="display: block; font-size: 13px; font-weight: 800; margin-bottom: 8px; color: #64748b;">CONVIDAR PESSOAS</label>
+                <input type="text" id="searchParticipantMobile" placeholder="Buscar por nome ou @..." 
+                       style="width: 100%; padding: 15px; border: 1px solid #e2e8f0; border-radius: 12px; font-family: 'Outfit'; font-size: 16px;">
+                
+                <div id="selectedParticipantsMobile" style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 15px;">
+                    <!-- Tags de selecionados -->
+                </div>
+                
+                <div id="participantsSuggestionsMobile" style="margin-top: 10px; border-radius: 12px; border: 1px solid #eee; background: #fafafa; overflow: hidden; display: none;">
+                    <!-- Sugestões -->
+                </div>
+            </div>
+        </div>
+
+        <div style="padding: 20px; border-top: 1px solid var(--glass-border); background: white;">
+            <button onclick="salvarNovoVaralMobile()" class="btn-pendurar-premium" style="width: 100%; height: 55px; justify-content: center;">
+                <i data-lucide="check"></i> CRIAR AGORA
+            </button>
+        </div>
+    </div>
+</div>
+
+<script src="assets/js/api.js"></script>
+<script src="assets/js/shared-logic.js"></script>
+<script src="assets/js/mobile-logic.js"></script>
+<script src="assets/js/mobile-varal-particular.js"></script>
+
+<script>
+    // Inicialização Mobile
+    window.onload = () => {
+        if (checkAuth()) {
+            loadFeed();
+            setInterval(() => loadFeed(true), 15000);
+            setInterval(updateOnlineStatus, 30000);
+            setInterval(updateUnreadCount, 10000);
+        }
+    };
+
+    function checkAuth() {
+        if (currentUser && token) {
+            document.getElementById("modalAuth").style.display = "none";
+            document.getElementById("userProfileHeader").style.display = "flex";
+            const nameEl = document.getElementById("userNameHeaderMobile");
+            nameEl.style.display = "block";
+            nameEl.textContent = currentUser.name;
+            document.getElementById("userInitial").textContent = currentUser.name[0].toUpperCase();
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+            return true;
+        } else {
+            document.getElementById("modalAuth").style.display = "flex";
+            return false;
+        }
+    }
+
+    function toggleAuth(isLogin) {
+        document.getElementById("loginForm").style.display = isLogin ? "flex" : "none";
+        document.getElementById("registerForm").style.display = isLogin ? "none" : "flex";
+    }
+
+    async function fazerLogin() {
+        const username = document.getElementById("loginUsername").value.trim();
+        const password = document.getElementById("loginPassword").value.trim();
+        try {
+            const res = await fetch(`${API_BASE}/login`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ username, password })
+            });
+            if (!res.ok) throw new Error("Credenciais inválidas");
+            const data = await res.json();
+            localStorage.setItem("user", JSON.stringify(data.user));
+            localStorage.setItem("token", data.token);
+            location.reload();
+        } catch(e) { alert(e.message); }
+    }
+
+    async function fazerRegistro() {
+        const name = document.getElementById("regName").value.trim();
+        const username = document.getElementById("regUsername").value.trim();
+        const password = document.getElementById("regPassword").value.trim();
+        const birth_date = document.getElementById("regBirthDate").value;
+        const residence = document.getElementById("regResidence").value.trim();
+
+        if (!name || !username || !password) return alert("Preencha os campos obrigatórios");
+
+        try {
+            const res = await fetch(`${API_BASE}/register`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ name, username, password, birth_date, residence })
+            });
+            if (!res.ok) throw new Error("Erro ao registrar");
+            alert("Conta criada com sucesso! Agora você pode entrar.");
+            toggleAuth(true);
+        } catch(e) { alert(e.message); }
+    }
+
+    let isVaralParticularContext = false;
+
+    function abrirUpload(context) { 
+        isVaralParticularContext = (context === 'private');
+        document.getElementById("modalUpload").style.display = "flex"; 
+        
+        // Ajusta qual botão de "Postar" aparece
+        document.getElementById("btnPostarGeral").style.display = isVaralParticularContext ? "none" : "block";
+        document.getElementById("btnPostarPrivado").style.display = isVaralParticularContext ? "block" : "none";
+        
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+    }
+    function fecharUpload() { document.getElementById("modalUpload").style.display = "none"; }
+
+    function abrirMessages() { 
+        document.getElementById("modalMessages").style.display = "flex"; 
+        if (typeof renderChatListMobile === "function") renderChatListMobile();
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+    }
+    function fecharMessages() { 
+        document.getElementById("modalMessages").style.display = "none"; 
+        voltarParaListaChat();
+    }
+
+    function abrirNotificacoes() { 
+        document.getElementById("modalNotifications").style.display = "flex"; 
+        if (typeof renderNotificacoesMobile === "function") renderNotificacoesMobile();
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+    }
+    function fecharNotificacoes() { document.getElementById("modalNotifications").style.display = "none"; }
+
+    async function pendurarNoVaralParticular() {
+        const fileInput = document.getElementById("mediaFile");
+        const caption = document.getElementById("caption").value;
+        if (!fileInput.files[0]) return alert("Selecione uma foto ou vídeo");
+
+        const formData = new FormData();
+        // Marcamos como privado para identificação local posterior
+        formData.append("is_private", "true");
+        formData.append("caption", caption);
+        formData.append("media", fileInput.files[0]);
+
+        try {
+            const res = await fetch(`${API_BASE}/post`, {
+                method: "POST",
+                headers: { "Authorization": `Bearer ${token}` },
+                body: formData
+            });
+            if (!res.ok) throw new Error("Erro ao postar no Varal Particular");
+            
+            const novoPost = await res.json();
+            
+            // INDEPENDÊNCIA: Salva o ID localmente como privado para não vazar no feed global
+            const privateIds = JSON.parse(localStorage.getItem("private_post_ids") || "[]");
+            privateIds.push(novoPost.id);
+            localStorage.setItem("private_post_ids", JSON.stringify(privateIds));
+
+            // Salva no Banco de Dados via API Sincronizada
+            await fetch(`${API_BASE}/varal/item`, {
+                method: "POST",
+                headers: { 
+                    "Authorization": `Bearer ${token}`,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    type: 'post',
+                    content: JSON.stringify(novoPost) // Salvamos o objeto post serializado ou o ID
+                })
+            });
+
+            fecharUpload();
+            console.log("Post Privado enviado e sincronizado no DB.");
+            
+            // Recarrega tudo para garantir sincronia
+            if (typeof initMobileVaral === "function") initMobileVaral();
+            loadFeed(); 
+        } catch(e) { 
+            console.error("Erro no upload privado:", e);
+            alert(e.message); 
+        }
+    }
+
+    async function pendurarPost() {
+        const fileInput = document.getElementById("mediaFile");
+        const caption = document.getElementById("caption").value;
+        if (!fileInput.files[0]) return alert("Selecione uma foto ou vídeo");
+
+        const formData = new FormData();
+        formData.append("media", fileInput.files[0]);
+        formData.append("caption", caption);
+
+        try {
+            const res = await fetch(`${API_BASE}/post`, {
+                method: "POST",
+                headers: { "Authorization": `Bearer ${token}` },
+                body: formData
+            });
+            if (!res.ok) throw new Error("Erro ao postar");
+            fecharUpload();
+            loadFeed();
+        } catch(e) { alert(e.message); }
+    }
+</script>
+</body>
+</html>
