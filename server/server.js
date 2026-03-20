@@ -909,6 +909,17 @@ app.post("/post", upload.single("media"), async (req, res) => {
 
     if (uploadError) {
       console.error("[ERRO SUPABASE UPLOAD]:", uploadError);
+      
+      // Tentativa de ajudar o usuário a descobrir o nome do bucket
+      if (uploadError.message.includes("Bucket not found")) {
+        const { data: buckets } = await supabase.storage.listBuckets();
+        const availableBuckets = buckets ? buckets.map(b => b.name).join(", ") : "nenhum";
+        return res.status(500).json({ 
+          error: `Erro: Baú (bucket) '${supabaseBucket}' não encontrado no Supabase.`,
+          available: availableBuckets,
+          hint: `Adicione a variável SUPABASE_BUCKET no Render com um destes nomes: ${availableBuckets}`
+        });
+      }
       throw uploadError;
     }
 
