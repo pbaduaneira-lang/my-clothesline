@@ -40,17 +40,11 @@ if (supabaseUrl && supabaseKey) {
   try {
     supabase = createClient(supabaseUrl, supabaseKey);
     console.log("[Supabase Config] Cliente inicializado com sucesso.");
-    
-    // Lista os buckets para diagnóstico no log do Render
-    supabase.storage.listBuckets().then(({ data, error }) => {
-      if (error) console.error("[Supabase Debug] Erro ao listar buckets:", error.message);
-      else console.log("[Supabase Debug] Buckets encontrados:", data.map(b => b.name).join(", "));
-    });
   } catch (err) {
     console.error("[Supabase Config] Erro ao inicializar cliente:", err);
   }
 } else {
-  console.warn("[Supabase Config] ATENÇÃO: Chaves do Supabase não encontradas no ambiente.");
+  console.warn("[Supabase Config] AVISO: Chaves do Supabase não encontradas. Uploads irão falhar.");
 }
 
 const app = express();
@@ -909,17 +903,6 @@ app.post("/post", upload.single("media"), async (req, res) => {
 
     if (uploadError) {
       console.error("[ERRO SUPABASE UPLOAD]:", uploadError);
-      
-      // Tentativa de ajudar o usuário a descobrir o nome do bucket
-      if (uploadError.message.includes("Bucket not found")) {
-        const { data: buckets } = await supabase.storage.listBuckets();
-        const availableBuckets = buckets ? buckets.map(b => b.name).join(", ") : "nenhum";
-        return res.status(500).json({ 
-          error: `Erro: Baú (bucket) '${supabaseBucket}' não encontrado no Supabase.`,
-          available: availableBuckets,
-          hint: `Adicione a variável SUPABASE_BUCKET no Render com um destes nomes: ${availableBuckets}`
-        });
-      }
       throw uploadError;
     }
 
@@ -1315,14 +1298,6 @@ app.post("/notifications/read-all", async (req, res) => {
     console.error(err);
     res.status(500).json({ error: "Erro ao atualizar notificações" });
   }
-});
-
-// ROTA DE DIAGNÓSTICO (APAGAR DEPOIS)
-app.get("/debug-buckets", async (req, res) => {
-  if (!supabase) return res.status(500).json({ error: "Supabase não configurado" });
-  const { data, error } = await supabase.storage.listBuckets();
-  if (error) return res.status(500).json({ error: error.message });
-  res.json({ buckets: data.map(b => b.name), message: "Use um destes nomes no código" });
 });
 
 app.listen(PORT, () => {
