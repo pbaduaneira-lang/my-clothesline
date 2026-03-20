@@ -18,19 +18,22 @@ function updateAuthHeaders(headers = {}) {
     return headers;
 }
 
-// INTRCEPTADOR GLOBAL DE REQUISIÇÕES
+// INTERCEPTADOR GLOBAL DE REQUISIÇÕES
 const originFetch = window.fetch;
 window.fetch = async function(...args) {
     const response = await originFetch(...args);
-    if (response.status === 401) {
-        // Se a resposta for 401, a sessão expirou ou é inválida
-        console.warn("Sessão expirada. Redirecionando para login...");
+    // Só redireciona se for erro 401 (Não Autorizado) e se tínhamos um token (indicando sessão expirada)
+    if (response.status === 401 && localStorage.getItem("token")) {
+        console.warn("Sessão expirada ou inválida. Limpando dados...");
         localStorage.removeItem("token");
         localStorage.removeItem("user");
-        token = null;
-        currentUser = null;
-        alert("Sessão expirada. Faça login novamente.");
-        window.location.reload();
+        
+        // Evita loop infinito: só recarrega se não for uma tentativa de login
+        const url = args[0] ? args[0].toString() : "";
+        if (!url.includes("/login") && !url.includes("/register")) {
+            alert("Sessão expirada. Faça login novamente.");
+            window.location.reload();
+        }
     }
     return response;
 };

@@ -130,6 +130,11 @@
         <input type="text" id="regName" placeholder="Nome Completo">
         <input type="text" id="regUsername" placeholder="Usuário">
         <input type="password" id="regPassword" placeholder="Senha">
+        <div style="text-align: left; width: 100%; margin-top: 10px;">
+            <label style="font-size: 11px; font-weight: 700; color: #666; margin-left: 5px;">Data de Nascimento</label>
+            <input type="date" id="regBirthDate" style="margin-top: 4px; width: 100%;">
+        </div>
+        <input type="text" id="regResidence" placeholder="Cidade/Estado onde reside">
         <button onclick="fazerRegistro()">Criar Conta</button>
         <div class="auth-toggle" onclick="toggleAuth(true)">Já tem conta? <b>Entrar</b></div>
     </div>
@@ -300,14 +305,19 @@
         const name = document.getElementById("regName").value.trim();
         const username = document.getElementById("regUsername").value.trim();
         const password = document.getElementById("regPassword").value.trim();
+        const birth_date = document.getElementById("regBirthDate").value;
+        const residence = document.getElementById("regResidence").value.trim();
+
+        if (!name || !username || !password) return alert("Preencha os campos obrigatórios");
+
         try {
             const res = await fetch(`${API_BASE}/register`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ name, username, password })
+                body: JSON.stringify({ name, username, password, birth_date, residence })
             });
             if (!res.ok) throw new Error("Erro ao registrar");
-            alert("Conta criada!");
+            alert("Conta criada com sucesso! Agora você pode entrar.");
             toggleAuth(true);
         } catch(e) { alert(e.message); }
     }

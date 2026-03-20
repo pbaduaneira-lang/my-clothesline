@@ -148,6 +148,11 @@ const upload = multer({
   limits: { fileSize: 100 * 1024 * 1024 } // 100MB
 });
 
+// SERVIR ARQUIVOS DE UPLOAD ANTIGOS (LEGADO)
+const uploadDir = path.join(__dirname, "uploads");
+if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir);
+app.use("/uploads", express.static(uploadDir));
+
 // SERVIR ARQUIVOS DE UPLOAD COM SUPORTE A STREAMING (RANGE REQUESTS)
 // SERVIR FRONTEND ESTÁTICO (WEB)
 const webPath = path.resolve(__dirname, '..', 'web');
