@@ -26,11 +26,23 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Interceptação de requisições (estratégia Cache First para assets estáticos)
+// Interceptação de requisições (estratégia Network First para garantir atualizações)
 self.addEventListener('fetch', (event) => {
   event.respondWith(
-    caches.match(event.request).then((response) => {
-      return response || fetch(event.request);
-    })
+    fetch(event.request)
+      .then((response) => {
+        // Se a resposta for válida, coloca no cache
+        if (response && response.status === 200 && response.type === 'basic') {
+          const responseToCache = response.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(event.request, responseToCache);
+          });
+        }
+        return response;
+      })
+      .catch(() => {
+        // Se a rede falhar, tenta buscar no cache
+        return caches.match(event.request);
+      })
   );
 });

@@ -3,12 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Clothesline - Site Web</title>
-    
+    <title>My Clothesline - Seu Varal Social</title>
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#f97316">
+    <!-- Google Fonts: Outfit -->
     <!-- REDIRECIONAMENTO INTELIGENTE PARA MOBILE -->
     <script>
         if (window.innerWidth < 768) {
             window.location.href = "app.html";
+        }
+    </script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(reg => console.log('Service Worker registrado:', reg.scope))
+                    .catch(err => console.log('Falha ao registrar Service Worker:', err));
+            });
         }
     </script>
 
@@ -341,10 +353,15 @@
                 headers: { "Authorization": `Bearer ${token}` },
                 body: formData
             });
-            if (!res.ok) throw new Error("Erro ao postar na rota /post");
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || `Erro ${res.status} ao postar na rota /post`);
             fecharUpload();
             loadFeed();
-        } catch(e) { alert(e.message); }
+            alert("Pendurado com sucesso! ✨");
+        } catch(e) { 
+            console.error("Erro no upload:", e);
+            alert(`Falha ao pendurar: ${e.message}`); 
+        }
     }
 
     function abrirCinema(url, type) {
@@ -460,7 +477,6 @@
         document.getElementById("modalAnniversaries").style.display = "none";
     }
 
-    // Pequena correção para garantir que ícones Lucide carreguem sempre
     document.addEventListener('DOMContentLoaded', () => {
         if (typeof lucide !== 'undefined') lucide.createIcons();
     });

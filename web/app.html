@@ -3,12 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>My Clothesline - Mobile App</title>
+    <title>My Clothesline App - Seu Varal Digital</title>
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#f97316">
+    <!-- Google Fonts: Outfit -->
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="assets/css/globals.css">
     <link rel="stylesheet" href="assets/css/mobile.css">
     <link rel="stylesheet" href="assets/css/mobile-varal-particular.css">
     <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(reg => console.log('Service Worker Mobile registrado:', reg.scope))
+                    .catch(err => console.log('Falha ao registrar Service Worker Mobile:', err));
+            });
+        }
+    </script>
 </head>
 <body>
 
@@ -434,9 +447,10 @@
                 headers: { "Authorization": `Bearer ${token}` },
                 body: formData
             });
-            if (!res.ok) throw new Error("Erro ao postar no Varal Particular");
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || `Erro ${res.status} ao postar na rota /post`);
             
-            const novoPost = await res.json();
+            const novoPost = data;
             
             // INDEPENDÊNCIA: Salva o ID localmente como privado para não vazar no feed global
             const privateIds = JSON.parse(localStorage.getItem("private_post_ids") || "[]");

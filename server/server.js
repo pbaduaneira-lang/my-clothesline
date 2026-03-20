@@ -30,16 +30,19 @@ if (!JWT_SECRET) {
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_KEY;
 
+console.log("[Supabase Config] URL presente:", !!supabaseUrl);
+console.log("[Supabase Config] Key presente:", !!supabaseKey);
+
 let supabase = null;
 if (supabaseUrl && supabaseKey) {
   try {
     supabase = createClient(supabaseUrl, supabaseKey);
-    console.log("Supabase Client inicializado com sucesso.");
-  } catch (e) {
-    console.error("Erro crítico ao inicializar Supabase Client:", e);
+    console.log("[Supabase Config] Cliente inicializado com sucesso.");
+  } catch (err) {
+    console.error("[Supabase Config] Erro ao inicializar cliente:", err);
   }
 } else {
-  console.warn("AVISO: SUPABASE_URL ou SUPABASE_KEY não configurados. Uploads de mídia irão falhar.");
+  console.warn("[Supabase Config] ATENÇÃO: Chaves do Supabase não encontradas no ambiente.");
 }
 
 const app = express();
