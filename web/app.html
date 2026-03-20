@@ -41,17 +41,25 @@
             </div>
         </div>
 
-        <!-- FAIXA 2: AÇÕES RÁPIDAS (ORIGINAL) -->
-        <div class="header-row actions-row" style="margin-top: 5px; justify-content: flex-end; gap: 10px;">
-            <button class="btn-pendurar-premium" onclick="abrirUpload()" style="padding: 8px 15px; height: 38px;">
-                <i data-lucide="plus-circle" style="width: 20px; margin-right: 5px;"></i> PENDURAR
-            </button>
-            <button class="icon-btn-premium" onclick="abrirMessages()" style="width: 38px; height: 38px;">
-                <i data-lucide="message-circle"></i>
-                <span id="msgBadge" class="badge" style="display:none;"></span>
-            </button>
-            <button id="pwaInstallBtn" class="btn-pendurar-premium" style="display: none; padding: 6px 12px; height: 38px; background: #10b981;">
-                <i data-lucide="download" style="width: 16px;"></i>
+        <!-- FAIXA 2: AÇÕES RÁPIDAS (RESTAURADA) -->
+        <div class="header-row actions-row" style="margin-top: 5px; justify-content: space-between;">
+            <div style="display: flex; gap: 12px; align-items: center;">
+                <button class="icon-btn-premium" onclick="abrirNotificacoes()" style="width: 38px; height: 38px;">
+                    <i data-lucide="bell"></i>
+                    <span id="notifBadge" class="badge" style="display:none;"></span>
+                </button>
+                <button class="icon-btn-premium" onclick="toggleOnlineList()" style="width: 38px; height: 38px;">
+                    <i data-lucide="users"></i>
+                    <span id="onlineCount" class="badge">0</span>
+                </button>
+                <button class="icon-btn-premium" onclick="abrirMessages()" style="width: 38px; height: 38px;">
+                    <i data-lucide="message-circle"></i>
+                    <span id="msgBadge" class="badge" style="display:none;"></span>
+                </button>
+            </div>
+
+            <button id="pwaInstallBtn" class="btn-pendurar-premium" style="display: none; padding: 0 10px; height: 38px; background: #10b981;">
+                <i data-lucide="download" style="width: 18px;"></i>
             </button>
         </div>
     </div>

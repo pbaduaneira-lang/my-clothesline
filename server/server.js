@@ -162,10 +162,10 @@ try {
   console.error("[Legado] Erro ao preparar pasta de uploads:", e.message);
 }
 
-// SERVIR FRONTEND ESTÁTICO (WEB)
+// SERVIR FRONTEND ESTÁTICO (WEB) - Com suporte a extensões .html automáticas
 const webPath = path.resolve(__dirname, '..', 'web');
 console.log(`[Config] Servindo frontend estático de: ${webPath}`);
-app.use(express.static(webPath));
+app.use(express.static(webPath, { extensions: ['html'] }));
 
 // ROTA RAIZ EXPLÍCITA (Garante que index.html carregue)
 app.get("/", (req, res) => {
@@ -1302,16 +1302,16 @@ app.post("/notifications/read-all", async (req, res) => {
   }
 });
 
-// ROTEAMENTO UNIVERSAL (Fallback para PWA/SPA) - Seguro para Express 5
+// ROTEAMENTO UNIVERSAL (Fallback para Login/Register) - Seguro para Express 5
 app.use((req, res, next) => {
-  // Se for uma requisição GET para uma rota não encontrada, serve o index.html
+  // Se for uma requisição GET para uma rota não encontrada (Deep links SPAs), serve o index.html
+  // IMPORTANTE: O express.static acima já resolve /app -> app.html e /varal-particular -> varal-particular.html
   if (req.method === 'GET' && !req.url.includes('.')) {
     const indexPath = path.join(webPath, "index.html");
     if (fs.existsSync(indexPath)) {
       return res.sendFile(indexPath);
     }
   }
-  // Se for qualquer outra coisa (API, Assets não encontrados), deixa o Express dar 404 padrão
   next();
 });
 
