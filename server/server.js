@@ -1,5 +1,7 @@
 const path = require("path");
-require('dotenv').config({ path: path.join(__dirname, '../.env') });
+const envPath = path.resolve(__dirname, '..', '.env');
+require('dotenv').config({ path: envPath });
+console.log(`[Config] Carregando ambiente de: ${envPath}`);
 const express = require("express");
 const cors = require("cors");
 const multer = require("multer");
@@ -148,11 +150,18 @@ const upload = multer({
 
 // SERVIR ARQUIVOS DE UPLOAD COM SUPORTE A STREAMING (RANGE REQUESTS)
 // SERVIR FRONTEND ESTÁTICO (WEB)
-app.use(express.static(path.join(__dirname, "../web")));
+const webPath = path.resolve(__dirname, '..', 'web');
+console.log(`[Config] Servindo frontend estático de: ${webPath}`);
+app.use(express.static(webPath));
 
 // ROTA RAIZ EXPLÍCITA (Garante que index.html carregue)
 app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "../web/index.html"));
+  const indexPath = path.join(webPath, "index.html");
+  if (fs.existsSync(indexPath)) {
+    res.sendFile(indexPath);
+  } else {
+    res.status(404).send("Erro: index.html não encontrado no servidor.");
+  }
 });
 
 /* AUTENTICAÇÃO E HEARTBEAT */
