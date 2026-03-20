@@ -1302,14 +1302,17 @@ app.post("/notifications/read-all", async (req, res) => {
   }
 });
 
-// ROTEAMENTO UNIVERSAL (PWA/SPA) - Compatível com Express 5
-app.get("(.*)", (req, res) => {
-  const indexPath = path.join(webPath, "index.html");
-  if (fs.existsSync(indexPath)) {
-    res.sendFile(indexPath);
-  } else {
-    res.status(404).send("Not Found");
+// ROTEAMENTO UNIVERSAL (Fallback para PWA/SPA) - Seguro para Express 5
+app.use((req, res, next) => {
+  // Se for uma requisição GET para uma rota não encontrada, serve o index.html
+  if (req.method === 'GET' && !req.url.includes('.')) {
+    const indexPath = path.join(webPath, "index.html");
+    if (fs.existsSync(indexPath)) {
+      return res.sendFile(indexPath);
+    }
   }
+  // Se for qualquer outra coisa (API, Assets não encontrados), deixa o Express dar 404 padrão
+  next();
 });
 
 app.listen(PORT, async () => {
