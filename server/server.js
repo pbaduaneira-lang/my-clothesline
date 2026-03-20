@@ -1302,8 +1302,8 @@ app.post("/notifications/read-all", async (req, res) => {
   }
 });
 
-// ROTEAMENTO UNIVERSAL (PWA/SPA)
-app.get("*", (req, res) => {
+// ROTEAMENTO UNIVERSAL (PWA/SPA) - Compatível com Express 5
+app.get("(.*)", (req, res) => {
   const indexPath = path.join(webPath, "index.html");
   if (fs.existsSync(indexPath)) {
     res.sendFile(indexPath);
