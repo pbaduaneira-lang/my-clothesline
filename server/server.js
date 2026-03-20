@@ -181,19 +181,33 @@ async function updateLastSeen(userId) {
 
 app.post("/register", async (req, res) => {
   try {
-    const { name, username, password, birth_date, residence } = req.body;
+    let { name, username, password, birth_date, residence } = req.body;
+    
+    if (!name || !username || !password) {
+      return res.status(400).json({ error: "Nome, usuário e senha são obrigatórios." });
+    }
+
     const trimmedUsername = username.trim().toLowerCase();
     const trimmedPassword = password.trim();
+    
+    // Tratamento para não quebrar o tipo DATE do PostgreSQL com strings vazias
+    const birthDateVal = (birth_date && birth_date.trim() !== "") ? birth_date : null;
+    const residenceVal = (residence && residence.trim() !== "") ? residence : null;
+
     const hashedPassword = await bcrypt.hash(trimmedPassword, 10);
     const result = await pool.query(
       "INSERT INTO users (name, username, password, birth_date, residence) VALUES ($1, $2, $3, $4, $5) RETURNING id, name, username, birth_date, residence, varal_name",
-      [name, trimmedUsername, hashedPassword, birth_date || null, residence || null]
+      [name.trim(), trimmedUsername, hashedPassword, birthDateVal, residenceVal]
     );
-    console.log(`Novo usuário registrado: ${trimmedUsername}`);
+    
+    console.log(`[Auth] Novo usuário registrado: ${trimmedUsername}`);
     res.json(result.rows[0]);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Erro ao registrar usuário" });
+    console.error("[ERRO REGISTRO]:", err);
+    if (err.code === '23505') {
+       return res.status(409).json({ error: "Este nome de usuário já está em uso." });
+    }
+    res.status(500).json({ error: "Erro interno no servidor ao criar conta." });
   }
 });
 

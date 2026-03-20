@@ -379,7 +379,8 @@
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ name, username, password, birth_date, residence })
             });
-            if (!res.ok) throw new Error("Erro ao registrar");
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || "Erro ao registrar");
             alert("Conta criada com sucesso! Agora você pode entrar.");
             toggleAuth(true);
         } catch(e) { alert(e.message); }
