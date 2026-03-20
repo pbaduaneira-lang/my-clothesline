@@ -448,7 +448,12 @@
                 body: formData
             });
             const data = await res.json();
-            if (!res.ok) throw new Error(data.error || `Erro ${res.status} ao postar na rota /post`);
+            if (!res.ok) {
+                let errMsg = data.error || `Erro ${res.status}`;
+                if (data.available) errMsg += `\nBaús disponíveis: ${data.available}`;
+                if (data.hint) errMsg += `\n\nDica: ${data.hint}`;
+                throw new Error(errMsg);
+            }
             
             const novoPost = data;
             
