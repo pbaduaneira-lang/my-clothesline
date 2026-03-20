@@ -918,17 +918,11 @@ app.post("/post", upload.single("media"), async (req, res) => {
     res.json(result.rows[0]);
   } catch (err) {
     console.error("[ERRO GERAL NO POST]:", err);
-    if (req.file && req.file.path) {
-      fs.unlink(req.file.path, () => {});
-    }
     
-    if (err.name === 'JsonWebTokenError' || err.name === 'TokenExpiredError') {
-      return res.status(401).json({ error: "Sessão inválida ou expirada. Por favor, faça login novamente." });
-    }
-
+    // Fornece o erro real para o cliente temporariamente para ajudar no debug
     res.status(500).json({ 
-      error: "Erro no servidor ao criar post", 
-      details: err.message 
+      error: `Erro no servidor: ${err.message}`, 
+      detail: err.detail || err.hint || null 
     });
   }
 });
