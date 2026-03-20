@@ -29,9 +29,11 @@ if (!JWT_SECRET) {
 // Inicialização do Supabase (Cloud Storage)
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_KEY;
+const supabaseBucket = process.env.SUPABASE_BUCKET || 'clothesline_media';
 
 console.log("[Supabase Config] URL presente:", !!supabaseUrl);
 console.log("[Supabase Config] Key presente:", !!supabaseKey);
+console.log("[Supabase Config] Bucket configurado:", supabaseBucket);
 
 let supabase = null;
 if (supabaseUrl && supabaseKey) {
@@ -899,7 +901,7 @@ app.post("/post", upload.single("media"), async (req, res) => {
 
     // UPLOAD PARA SUPABASE STORAGE
     const { data, error: uploadError } = await supabase.storage
-      .from('clothesline_media') // Nome do seu bucket no Supabase
+      .from(supabaseBucket)
       .upload(filePath, req.file.buffer, {
         contentType: req.file.mimetype,
         upsert: false
@@ -911,7 +913,7 @@ app.post("/post", upload.single("media"), async (req, res) => {
     }
 
     // Gerar URL Pública
-    const { data: publicData } = supabase.storage.from('clothesline_media').getPublicUrl(filePath);
+    const { data: publicData } = supabase.storage.from(supabaseBucket).getPublicUrl(filePath);
     const media_url = publicData.publicUrl;
 
     console.log(`[Upload Cloud] Sucesso! URL: ${media_url}`);
