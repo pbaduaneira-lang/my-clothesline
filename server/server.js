@@ -1300,6 +1300,17 @@ app.post("/notifications/read-all", async (req, res) => {
   }
 });
 
+// ROTEAMENTO UNIVERSAL (PWA/SPA)
+app.get("*", (req, res) => {
+  const webPath = path.resolve(__dirname, '..', 'web');
+  const indexPath = path.join(webPath, "index.html");
+  if (fs.existsSync(indexPath)) {
+    res.sendFile(indexPath);
+  } else {
+    res.status(404).send("Not Found");
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`Servidor rodando na porta ${PORT}`);
 });
