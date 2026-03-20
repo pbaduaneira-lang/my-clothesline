@@ -893,7 +893,7 @@ app.post("/post", upload.single("media"), async (req, res) => {
 
     // UPLOAD PARA SUPABASE STORAGE
     const { data, error: uploadError } = await supabase.storage
-      .from('media') // Nome do seu bucket no Supabase
+      .from('clothesline_media') // Nome do seu bucket no Supabase
       .upload(filePath, req.file.buffer, {
         contentType: req.file.mimetype,
         upsert: false
@@ -905,7 +905,7 @@ app.post("/post", upload.single("media"), async (req, res) => {
     }
 
     // Gerar URL Pública
-    const { data: publicData } = supabase.storage.from('media').getPublicUrl(filePath);
+    const { data: publicData } = supabase.storage.from('clothesline_media').getPublicUrl(filePath);
     const media_url = publicData.publicUrl;
 
     console.log(`[Upload Cloud] Sucesso! URL: ${media_url}`);
