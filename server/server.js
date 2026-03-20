@@ -38,6 +38,12 @@ if (supabaseUrl && supabaseKey) {
   try {
     supabase = createClient(supabaseUrl, supabaseKey);
     console.log("[Supabase Config] Cliente inicializado com sucesso.");
+    
+    // Lista os buckets para diagnóstico no log do Render
+    supabase.storage.listBuckets().then(({ data, error }) => {
+      if (error) console.error("[Supabase Debug] Erro ao listar buckets:", error.message);
+      else console.log("[Supabase Debug] Buckets encontrados:", data.map(b => b.name).join(", "));
+    });
   } catch (err) {
     console.error("[Supabase Config] Erro ao inicializar cliente:", err);
   }
@@ -1296,6 +1302,14 @@ app.post("/notifications/read-all", async (req, res) => {
     console.error(err);
     res.status(500).json({ error: "Erro ao atualizar notificações" });
   }
+});
+
+// ROTA DE DIAGNÓSTICO (APAGAR DEPOIS)
+app.get("/debug-buckets", async (req, res) => {
+  if (!supabase) return res.status(500).json({ error: "Supabase não configurado" });
+  const { data, error } = await supabase.storage.listBuckets();
+  if (error) return res.status(500).json({ error: error.message });
+  res.json({ buckets: data.map(b => b.name), message: "Use um destes nomes no código" });
 });
 
 app.listen(PORT, () => {
