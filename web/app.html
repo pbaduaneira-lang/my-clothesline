@@ -41,22 +41,53 @@
             </div>
         </div>
 
-        <!-- FAIXA 2: AÇÕES -->
-        <div class="header-row actions-row">
-            <button class="icon-btn-premium btn-msg" onclick="abrirMessages()">
-                <i data-lucide="message-circle" style="width: 24px; height: 24px;"></i>
-                <span id="msgNotificationCount" class="badge">0</span>
-            </button>
-            <button class="icon-btn-premium btn-notif" onclick="abrirNotificacoes()">
-                <i data-lucide="bell" style="width: 24px; height: 24px;"></i>
-            </button>
-            <button class="icon-btn-premium btn-users" onclick="toggleOnlineList()">
-                <i data-lucide="users" style="width: 24px; height: 24px;"></i>
-                <span id="onlineCount" class="badge">0</span>
+        <!-- FAIXA 2: AÇÕES RÁPIDAS (MENOR) -->
+        <div class="header-row actions-row" style="margin-top: 5px;">
+            <div style="display: flex; gap: 15px;">
+                <button class="icon-btn-premium" onclick="abrirNotificacoes()" style="width: 38px; height: 38px;">
+                    <i data-lucide="bell"></i>
+                    <span id="notifBadge" class="badge" style="display:none;"></span>
+                </button>
+                <button class="icon-btn-premium" onclick="toggleOnlineList()" style="width: 38px; height: 38px;">
+                    <i data-lucide="users"></i>
+                    <span id="onlineCount" class="badge">0</span>
+                </button>
+            </div>
+            
+            <button id="pwaInstallBtn" class="btn-pendurar-premium" style="display: none; padding: 6px 12px; height: 32px; background: #10b981;">
+                <i data-lucide="download" style="width: 16px; margin-right: 5px;"></i> INSTALAR
             </button>
         </div>
     </div>
 </header>
+
+<!-- BARRA DE NAVEGAÇÃO INFERIOR (BOTTOM NAVBAR) -->
+<nav class="bottom-nav">
+    <button class="nav-item active" onclick="location.reload()">
+        <i data-lucide="home"></i>
+        <span>Início</span>
+    </button>
+    <button class="nav-item" onclick="abrirSelecaoVaralMobile()">
+        <i data-lucide="layout-grid"></i>
+        <span>Varais</span>
+    </button>
+    
+    <div class="nav-center">
+        <button class="nav-btn-main" onclick="abrirUpload()">
+            <i data-lucide="plus"></i>
+        </button>
+    </div>
+
+    <button class="nav-item" onclick="abrirMessages()">
+        <i data-lucide="message-circle"></i>
+        <span>Mensagens</span>
+        <span id="msgBadge" class="badge" style="display:none;"></span>
+    </button>
+    <button class="nav-item" onclick="abrirPerfilMobile()">
+        <i data-lucide="user"></i>
+        <span>Perfil</span>
+    </button>
+</nav>
 
 <div id="mobile-focus-area" style="display: none; height: 350px;">
     <div id="mobile-focus-content" style="height: 100%;">
@@ -336,8 +367,32 @@
             setInterval(() => loadFeed(true), 15000);
             setInterval(updateOnlineStatus, 30000);
             setInterval(updateUnreadCount, 10000);
+            initPWAInstall();
+            if (typeof lucide !== 'undefined') lucide.createIcons();
         }
     };
+
+    let deferredPrompt;
+    function initPWAInstall() {
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            const installBtn = document.getElementById('pwaInstallBtn');
+            if (installBtn) {
+                installBtn.style.display = 'flex';
+                installBtn.addEventListener('click', () => {
+                    deferredPrompt.prompt();
+                    deferredPrompt.userChoice.then((choiceResult) => {
+                        if (choiceResult.outcome === 'accepted') {
+                            console.log('User accepted the PWA install');
+                        }
+                        installBtn.style.display = 'none';
+                        deferredPrompt = null;
+                    });
+                });
+            }
+        });
+    }
 
     function checkAuth() {
         if (currentUser && token) {
@@ -430,6 +485,20 @@
     }
     function fecharNotificacoes() { document.getElementById("modalNotifications").style.display = "none"; }
 
+    function abrirSelecaoVaralMobile() {
+        document.getElementById("modalSelectVaralMobile").style.display = "flex";
+        if (typeof renderListaVaraisMobile === "function") renderListaVaraisMobile();
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+    }
+    function fecharSelecaoVaralMobile() { document.getElementById("modalSelectVaralMobile").style.display = "none"; }
+
+    function abrirPerfilMobile() {
+        if (confirm(`Sair da conta de ${currentUser.name}?`)) {
+            localStorage.clear();
+            location.reload();
+        }
+    }
+
     async function pendurarNoVaralParticular() {
         const fileInput = document.getElementById("mediaFile");
         const caption = document.getElementById("caption").value;
@@ -497,9 +566,12 @@
                 headers: { "Authorization": `Bearer ${token}` },
                 body: formData
             });
-            if (!res.ok) throw new Error("Erro ao postar");
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || `Erro ${res.status}`);
+            
             fecharUpload();
             loadFeed();
+            alert("Pendurado com sucesso! ✨");
         } catch(e) { alert(e.message); }
     }
 </script>
