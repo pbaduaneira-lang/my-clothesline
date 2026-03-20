@@ -143,9 +143,8 @@ async function initDB() {
   }
 }
 
-// Inicializa as tabelas ao subir o servidor
-// Inicializa as tabelas ao subir o servidor
-initDB();
+// Função initDB() movida para o final para boot assíncrono seguro
+// initDB() será chamado no app.listen
 
 // Configuração do Multer para Memória (O arquivo não toca o HD do servidor, vai direto pro Supabase)
 const storage = multer.memoryStorage();
@@ -1313,6 +1312,15 @@ app.get("*", (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`Servidor rodando na porta ${PORT}`);
+app.listen(PORT, async () => {
+  console.log(`[BOOT] Servidor rodando na porta ${PORT}`);
+  console.log(`[BOOT] Modo: ${process.env.NODE_ENV || 'development'}`);
+  
+  // Inicialização do Banco de Dados pós-boot para evitar timeout no Render
+  try {
+    await initDB();
+    console.log("[BOOT] Database inicializada com sucesso.");
+  } catch (err) {
+    console.error("[BOOT] Falha crítica na inicialização do DB:", err.message);
+  }
 });
