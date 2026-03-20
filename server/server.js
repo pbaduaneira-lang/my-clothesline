@@ -11,15 +11,34 @@ const pool = require("./db");
 
 const { createClient } = require('@supabase/supabase-js');
 
+// Prevenir crash silencioso em caso de erros de inicialização ou promessas
+process.on('uncaughtException', (err) => {
+  console.error('[UNCAUGHT EXCEPTION]:', err);
+});
+process.on('unhandledRejection', (err) => {
+  console.error('[UNHANDLED REJECTION]:', err);
+});
+
 const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) {
   console.error("ERRO: JWT_SECRET não configurado!");
 }
 
-// Inicialização do Supabase
+// Inicialização do Supabase (Cloud Storage)
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_KEY;
-const supabase = createClient(supabaseUrl, supabaseKey);
+
+let supabase = null;
+if (supabaseUrl && supabaseKey) {
+  try {
+    supabase = createClient(supabaseUrl, supabaseKey);
+    console.log("Supabase Client inicializado com sucesso.");
+  } catch (e) {
+    console.error("Erro crítico ao inicializar Supabase Client:", e);
+  }
+} else {
+  console.warn("AVISO: SUPABASE_URL ou SUPABASE_KEY não configurados. Uploads de mídia irão falhar.");
+}
 
 const app = express();
 app.use(cors());
@@ -803,14 +822,6 @@ app.post("/messages", async (req, res) => {
 
 /* CRIAR POST */
 
-// Prevenir crash silencioso do processo Node.js
-process.on('uncaughtException', (err) => {
-  console.error('[UNCAUGHT EXCEPTION]:', err);
-});
-process.on('unhandledRejection', (err) => {
-  console.error('[UNHANDLED REJECTION]:', err);
-});
-
 app.post("/post", upload.single("media"), async (req, res) => {
   try {
     const token = req.headers.authorization?.split(" ")[1];
@@ -842,6 +853,10 @@ app.post("/post", upload.single("media"), async (req, res) => {
     const isVideo = req.file.mimetype.startsWith("video") || 
                     ['mp4', 'webm', 'ogg', 'mov', 'quicktime'].some(ext => fileExt.toLowerCase() === ext);
     const type = isVideo ? "video" : "image";
+
+    if (!supabase) {
+      return res.status(500).json({ error: "Serviço de Storage (Supabase) não configurado no servidor." });
+    }
 
     console.log(`[Upload Cloud] Iniciando: ${req.file.originalname} | Mime: ${req.file.mimetype} | Tipo: ${type}`);
 
