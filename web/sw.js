@@ -1,4 +1,4 @@
-const CACHE_NAME = 'clothesline-v3';
+const CACHE_NAME = 'clothesline-v4';
 const ASSETS = [
   './',
   './index.html',
