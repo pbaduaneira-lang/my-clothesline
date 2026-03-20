@@ -25,6 +25,7 @@ const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) {
   console.error("ERRO: JWT_SECRET não configurado!");
 }
+const PORT = process.env.PORT || 3000;
 
 // Inicialização do Supabase (Cloud Storage)
 const supabaseUrl = process.env.SUPABASE_URL;
@@ -154,11 +155,14 @@ const upload = multer({
 });
 
 // SERVIR ARQUIVOS DE UPLOAD ANTIGOS (LEGADO)
-const uploadDir = path.join(__dirname, "uploads");
-if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir);
-app.use("/uploads", express.static(uploadDir));
+try {
+  const uploadDir = path.join(__dirname, "uploads");
+  if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir);
+  app.use("/uploads", express.static(uploadDir));
+} catch (e) {
+  console.error("[Legado] Erro ao preparar pasta de uploads:", e.message);
+}
 
-// SERVIR ARQUIVOS DE UPLOAD COM SUPORTE A STREAMING (RANGE REQUESTS)
 // SERVIR FRONTEND ESTÁTICO (WEB)
 const webPath = path.resolve(__dirname, '..', 'web');
 console.log(`[Config] Servindo frontend estático de: ${webPath}`);
@@ -1244,7 +1248,6 @@ app.get("/feed/user/:id", async (req, res) => {
   }
 });
 
-const PORT = process.env.PORT || 3000;
 /* NOTIFICAÇÕES */
 app.get("/notifications", async (req, res) => {
   try {
@@ -1302,7 +1305,6 @@ app.post("/notifications/read-all", async (req, res) => {
 
 // ROTEAMENTO UNIVERSAL (PWA/SPA)
 app.get("*", (req, res) => {
-  const webPath = path.resolve(__dirname, '..', 'web');
   const indexPath = path.join(webPath, "index.html");
   if (fs.existsSync(indexPath)) {
     res.sendFile(indexPath);
