@@ -12,7 +12,8 @@ let currentVaralIdMobile = null;
 
 async function initMobileVaral(id = null) {
     currentVaralIdMobile = id;
-    console.log("Iniciando Varal Particular Mobile (Sincronizado)... Varal ID:", id);
+    mobileVaralData.itens = []; // Limpa cache anterior
+    renderMobileVaral();        // Mostra estado de limpeza/loading
     
     try {
         let res;
@@ -35,23 +36,18 @@ async function initMobileVaral(id = null) {
                 created_at: item.created_at
             })) || [];
         } else {
-            // Varal Global (Comportamento original)
+            // Varal Pessoal (Global)
             res = await fetch(`${API_BASE}/varal`, { headers: updateAuthHeaders() });
             const data = await res.json();
-            mobileVaralData.nome = data.name || "Meu Varal";
+            mobileVaralData.nome = data.name || "Meu Varal Pessoal";
             mobileVaralData.itens = data.items || [];
         }
 
         document.getElementById("display-nome-varal-mobile").textContent = mobileVaralData.nome;
         
-        const namingBar = document.getElementById("naming-bar-mobile");
-        if (namingBar) {
-            if (mobileVaralData.nome && mobileVaralData.nome !== "Meu Varal" && mobileVaralData.nome !== "Varal Particular") {
-                namingBar.classList.add("hidden");
-            } else {
-                namingBar.classList.remove("hidden");
-            }
-        }
+        // Controle de visibilidade do botão sair do grupo (Só aparece se id existir)
+        const btnSair = document.getElementById("btn-sair-grupo-mobile");
+        if (btnSair) btnSair.style.display = id ? "flex" : "none";
 
         renderMobileVaral();
         renderMobileParticipants(id);
@@ -64,9 +60,15 @@ async function renderMobileParticipants(id) {
     const container = document.getElementById("mobile-participants-list");
     if (!container) return;
     
-    // Se for o varal global, podemos ocultar ou mostrar o próprio usuário
+    // Se for o varal pessoal, podemos mostrar apenas o próprio usuário ou ocultar
     if (!id) {
-        container.style.display = "none";
+        container.innerHTML = `
+            <div class="btn-pessoa-mobile" style="border-color: var(--primary);">
+                <div class="avatar-mobile" style="background: var(--primary); color: white;">${currentUser ? currentUser.name[0].toUpperCase() : 'U'}</div>
+                <div class="nome-mobile" style="color: var(--primary); font-weight: 800;">Eu</div>
+            </div>
+        `;
+        container.style.display = "flex";
         return;
     }
     
@@ -76,8 +78,18 @@ async function renderMobileParticipants(id) {
         const users = await res.json();
         container.innerHTML = "";
 
+        // Adiciona um card especial para o Varal em si ou para o "Eu"
+        const meDiv = document.createElement("div");
+        meDiv.className = "btn-pessoa-mobile";
+        meDiv.style = "border-color: #e2e8f0; opacity: 0.8;";
+        meDiv.innerHTML = `
+            <div class="avatar-mobile" style="background: #64748b; color: white;">${currentUser ? currentUser.name[0].toUpperCase() : 'U'}</div>
+            <div class="nome-mobile">Eu</div>
+        `;
+        container.appendChild(meDiv);
+
         users.forEach(u => {
-            if (u.id === currentUser.id) return; // Não mostra o próprio usuário na lista de participantes
+            if (currentUser && u.id === currentUser.id) return;
             const div = document.createElement("div");
             div.className = "btn-pessoa-mobile";
             div.innerHTML = `
@@ -102,11 +114,42 @@ function renderMobileVaral() {
     const canvas = document.getElementById("mobile-varal-canvas");
     if (!canvas) return;
 
-    // INDEPENDÊNCIA TOTAL: Mostra apenas itens salvos no mobileVaralData.itens
-    // que foram postados especificamente aqui ou pessoas incluídas.
-    const itens = mobileVaralData.itens;
+    // PARIDADE: Filtragem dinâmica de posts do Nanobanana ou pessoas incluídas
+    let pessoas = mobileVaralData.itens.filter(i => i.type === 'person');
+    const nomesPessoas = pessoas.map(p => p.content.toLowerCase());
+    
+    let postsFiltrados = postsData.filter(post => {
+        const autor = (post.author_name || "").toLowerCase();
+        return nomesPessoas.includes(autor);
+    });
 
-    if (itens.length === 0) {
+    // Unificação de itens (Mensagens, Posts explícitos e Posts filtrados)
+    const itensUnificados = [
+        ...mobileVaralData.itens.filter(i => i.type === 'message').map(m => ({ 
+            ...m, 
+            category: 'message', 
+            timestamp: new Date(m.created_at || 0).getTime()
+        })),
+        ...mobileVaralData.itens.filter(i => i.type === 'post').map(postItem => {
+            try {
+                const postObj = typeof postItem.content === 'string' ? JSON.parse(postItem.content) : postItem.content;
+                return {
+                    ...postObj,
+                    id: postItem.id, // ID da tabela user_varal_items
+                    post_id: postObj.id, 
+                    category: 'post',
+                    timestamp: postObj.created_at ? new Date(postObj.created_at).getTime() : 0
+                };
+            } catch(e) { return null; }
+        }).filter(Boolean),
+        ...postsFiltrados.map(p => ({ 
+            ...p, 
+            category: 'post', 
+            timestamp: p.created_at ? new Date(p.created_at).getTime() : 0 
+        }))
+    ];
+
+    if (itensUnificados.length === 0) {
         canvas.innerHTML = `<div style="text-align:center; color: #94a3b8; width: 100%; padding: 40px 20px;">
             <p style="font-weight: 800;">Seu Varal Particular está vazio!</p>
             <p style="font-size: 12px;">Use os botões abaixo para pendurar fotos ou incluir pessoas.</p>
@@ -114,60 +157,36 @@ function renderMobileVaral() {
         return;
     }
 
-    console.log("Renderizando Varal Particular com", itens.length, "itens");
+    // Ordenação cronológica (Esquerda -> Direita / Antigo -> Novo)
+    itensUnificados.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
 
-    // Ordenação cronológica (Oldest to Newest -> Left to Right)
-    const sortedItens = [...itens].sort((a, b) => {
-        const timeA = new Date(a.created_at || 0).getTime();
-        const timeB = new Date(b.created_at || 0).getTime();
-        
-        const finalA = isNaN(timeA) || timeA === 0 ? Date.now() : timeA;
-        const finalB = isNaN(timeB) || timeB === 0 ? Date.now() : timeB;
-        
-        return finalA - finalB;
-    });
+    canvas.innerHTML = itensUnificados.map(item => {
+        if (item.category === 'post') {
+            const mediaUrl = getMediaUrl(item);
+            const postType = detectPostType(item, mediaUrl);
+            
+            let mediaHtml = postType === "video" 
+                ? `<video src="${mediaUrl}" muted loop playsinline style="width: 100%; height: 100%; object-fit: cover;" onclick="abrirCinemaMobile('${mediaUrl}', 'video')"></video>` 
+                : `<img src="${mediaUrl}" style="width: 100%; height: 100%; object-fit: cover;" onclick="abrirCinemaMobile('${mediaUrl}', 'image')">`;
 
-    canvas.innerHTML = sortedItens.map(item => {
-        if (item.type === 'post') {
-            try {
-                const post = typeof item.content === 'string' ? JSON.parse(item.content) : item.content;
-                const url = getMediaUrl(post);
-                const postType = detectPostType(post, url);
-                
-                let mediaHtml = postType === "video" 
-                    ? `<video src="${url}" muted loop playsinline style="width: 100%; height: 100%; object-fit: cover;"></video>` 
-                    : `<img src="${url}" style="width: 100%; height: 100%; object-fit: cover;">`;
-
-                return `
-                    <div class="mobile-varal-item" style="scroll-snap-align: center; flex-shrink: 0; width: 260px; height: 380px; background: white; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.08); overflow: hidden; display: flex; flex-direction: column; margin-top: 0; border: none; position: relative;">
-                        <button onclick="removerItemMobile('${item.id}', 'post')" style="position: absolute; top: 10px; right: 10px; background: rgba(255,255,255,0.8); border: none; border-radius: 50%; width: 30px; height: 30px; color: #ef4444; z-index: 10; display: flex; align-items: center; justify-content: center;"><i data-lucide="trash-2" style="width: 16px;"></i></button>
-                        <div style="padding: 8px 15px; font-weight: 800; font-size: 13px; border: none;">@${post.author_name || item.author || 'Eu'}</div>
-                        <div style="flex: 1; overflow: hidden; display: flex; align-items: center; justify-content: center; background: #fafafa;">
-                            ${mediaHtml}
-                        </div>
-                        ${post.caption ? `<div style="padding: 12px 15px; font-size: 12px; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; background: white;">${post.caption}</div>` : '<div style="height: 10px;"></div>'}
-                    </div>
-                `;
-            } catch (e) {
-                console.error("Erro ao processar item de post:", e);
-                return "";
-            }
-        } else if (item.type === 'message') {
             return `
-                <div class="mobile-varal-item" style="scroll-snap-align: center; flex-shrink: 0; width: 260px; height: 380px; background: white; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.08); overflow: hidden; display: flex; flex-direction: column; margin-top: 0; border: none; position: relative;">
+                <div class="mobile-varal-item" style="scroll-snap-align: center; flex-shrink: 0; width: 260px; height: 380px; background: white; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.08); overflow: hidden; display: flex; flex-direction: column; position: relative;">
+                    <button onclick="removerItemMobile('${item.id}', 'post', '${item.author_name || item.author}')" style="position: absolute; top: 10px; right: 10px; background: rgba(255,255,255,0.8); border: none; border-radius: 50%; width: 30px; height: 30px; color: #ef4444; z-index: 10; display: flex; align-items: center; justify-content: center;"><i data-lucide="trash-2" style="width: 16px;"></i></button>
+                    <div style="padding: 8px 15px; font-weight: 800; font-size: 13px; border: none;">@${item.author_name || item.author || 'Eu'}</div>
+                    <div style="flex: 1; overflow: hidden; display: flex; align-items: center; justify-content: center; background: #fafafa;">
+                        ${mediaHtml}
+                    </div>
+                    ${item.caption ? `<div style="padding: 12px 15px; font-size: 12px; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; background: white;">${item.caption}</div>` : '<div style="height: 10px;"></div>'}
+                </div>
+            `;
+        } else if (item.category === 'message') {
+            return `
+                <div class="mobile-varal-item" style="scroll-snap-align: center; flex-shrink: 0; width: 260px; height: 380px; background: white; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.08); overflow: hidden; display: flex; flex-direction: column; position: relative;">
                     <button onclick="removerItemMobile('${item.id}', 'message')" style="position: absolute; top: 10px; right: 10px; background: rgba(255,255,255,0.8); border: none; border-radius: 50%; width: 30px; height: 30px; color: #ef4444; z-index: 10; display: flex; align-items: center; justify-content: center;"><i data-lucide="trash-2" style="width: 16px;"></i></button>
                     <div style="padding: 8px 15px; font-weight: 800; font-size: 13px; border: none;">@${item.author || (currentUser ? currentUser.name : 'Eu')}</div>
                     <div style="flex: 1; padding: 15px; text-align: center; color: #1e293b; font-size: 16px; font-weight: 700; font-style: italic; display: flex; align-items: center; justify-content: center; background: #fffbeb; line-height: 1.4;">
                         "${item.content}"
                     </div>
-                </div>
-            `;
-        } else if (item.type === 'person') {
-            return `
-                <div class="mobile-varal-item" style="scroll-snap-align: center; flex-shrink: 0; width: 140px; background: white; border-radius: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); padding: 15px; display: flex; flex-direction: column; align-items: center; gap: 8px; border: 1px solid #f1f5f9; position: relative;">
-                    <button onclick="removerItemMobile('${item.id}', 'person')" style="position: absolute; top: 5px; right: 5px; background: none; border: none; color: #ef4444;"><i data-lucide="x-circle" style="width: 14px;"></i></button>
-                    <div class="user-avatar" style="width: 50px; height: 50px; font-size: 20px;">${item.content[0].toUpperCase()}</div>
-                    <span style="font-weight: 700; font-size: 12px; text-align: center;">${item.content}</span>
                 </div>
             `;
         }
@@ -176,12 +195,15 @@ function renderMobileVaral() {
 
     if (window.lucide) lucide.createIcons();
 
-    // LISTENER DE SCROLL PARA SOM (CIRÚRGICO)
+    // Rola para o final após carregar (recém pendurados à direita)
+    setTimeout(() => {
+        canvas.scrollTo({ left: canvas.scrollWidth, behavior: 'smooth' });
+    }, 300);
+
     if (canvas) {
         canvas.onscroll = () => {
              updateCenterMobileVaral();
         };
-        // Trigger inicial após renderização
         setTimeout(updateCenterMobileVaral, 600);
     }
 }
@@ -261,20 +283,60 @@ function renderSugestoesMobile(termo) {
     `).join("");
 }
 
-async function removerItemMobile(id, category) {
-    if (!confirm("Deseja remover este item do seu varal?")) return;
+async function removerItemMobile(id, type, name = "") {
+    const msg = type === 'message' 
+        ? "Deseja remover esta mensagem do varal?" 
+        : `Deseja remover ${name ? `as fotos de "${name}"` : "este item"} do varal?`;
+
+    if (!confirm(msg)) return;
     
     try {
-        const res = await fetch(`${API_BASE}/varal/item/${id}`, {
+        let idParaDeletar = id;
+        if (type === 'post' && !id.includes('-')) { // Se não for um ID numérico reto, pode ser do postsData
+             // Tenta achar o item do varal correspondente
+             const itemVaral = mobileVaralData.itens.find(i => i.type === 'person' && i.content === name);
+             if (itemVaral) idParaDeletar = itemVaral.id;
+        }
+
+        const res = await fetch(`${API_BASE}/varal/item/${idParaDeletar}`, {
             method: "DELETE",
             headers: updateAuthHeaders()
         });
         if (res.ok) {
-            mobileVaralData.itens = mobileVaralData.itens.filter(i => i.id != id);
+            mobileVaralData.itens = mobileVaralData.itens.filter(i => i.id != idParaDeletar);
             renderMobileVaral();
         }
     } catch (e) {
         alert("Erro ao remover item.");
+    }
+}
+
+async function sairDoVaralMobile() {
+    if (!currentVaralIdMobile) return;
+    if (!confirm("Tem certeza que deseja sair deste grupo de Varal Particular?")) return;
+
+    try {
+        const res = await fetch(`${API_BASE}/varais/${currentVaralIdMobile}/participants/me`, {
+            method: "DELETE",
+            headers: updateAuthHeaders()
+        });
+
+        if (res.ok) {
+            alert("Você saiu do grupo com sucesso.");
+            fecharVaralParticular();
+        } else {
+            const err = await res.json();
+            alert(err.error || "Erro ao sair do grupo.");
+        }
+    } catch (e) {
+        console.error("Erro ao sair do varal mobile:", e);
+        alert("Erro na conexão com o servidor.");
+    }
+}
+
+function abrirCinemaMobile(url, type) {
+    if (typeof ampliarMediaMobile === "function") {
+        ampliarMediaMobile(url, type);
     }
 }
 

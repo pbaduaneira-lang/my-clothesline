@@ -300,7 +300,7 @@ app.get("/varal", async (req, res) => {
     const userId = decoded.id;
 
     const userRes = await pool.query("SELECT varal_name FROM users WHERE id = $1", [userId]);
-    const itemsRes = await pool.query("SELECT * FROM user_varal_items WHERE user_id = $1 ORDER BY created_at ASC", [userId]);
+    const itemsRes = await pool.query("SELECT * FROM user_varal_items WHERE user_id = $1 AND varal_id IS NULL ORDER BY created_at ASC", [userId]);
     
     res.json({
       name: userRes.rows[0]?.varal_name || "Meu Varal",
@@ -568,6 +568,39 @@ app.get("/varais/:id/participants", async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Erro ao listar participantes" });
+  }
+});
+
+app.delete("/varais/:id/participants/me", async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(" ")[1];
+    if (!token) return res.status(401).json({ error: "Não autorizado" });
+    let decoded;
+    try {
+      decoded = jwt.verify(token, JWT_SECRET);
+    } catch (err) {
+      if (err.name === 'TokenExpiredError' || err.name === 'JsonWebTokenError') {
+        return res.status(401).json({ error: "A sessão expirou. Faça login novamente." });
+      }
+      return res.status(403).json({ error: "Token inválido" });
+    }
+    const userId = decoded.id;
+    const varalId = req.params.id;
+
+    // Dono não pode sair (opcional: poderia deletar o varal, mas vamos manter simples)
+    const ownerCheck = await pool.query("SELECT owner_id FROM private_varais WHERE id = $1", [varalId]);
+    if (ownerCheck.rows.length > 0 && ownerCheck.rows[0].owner_id === userId) {
+      return res.status(400).json({ error: "O dono não pode sair do grupo. Exclua o varal se desejar encerrá-lo." });
+    }
+
+    await pool.query(
+      "DELETE FROM private_varal_participants WHERE varal_id = $1 AND user_id = $2",
+      [varalId, userId]
+    );
+    res.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Erro ao sair do grupo" });
   }
 });
 

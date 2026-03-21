@@ -41,20 +41,22 @@
             </div>
         </div>
 
-        <!-- FAIXA 2: AÇÕES RÁPIDAS (RESTAURADA) -->
+        <!-- FAIXA 2: AÇÕES RÁPIDAS (RESTAURADA E COMPLETA) -->
         <div class="header-row actions-row" style="margin-top: 5px; justify-content: space-between;">
-            <div style="display: flex; gap: 12px; align-items: center;">
-                <button class="icon-btn-premium" onclick="abrirNotificacoes()" style="width: 38px; height: 38px;">
+            <div style="display: flex; gap: 15px; align-items: center;">
+                <button class="icon-btn-premium" onclick="abrirNotificacoes()" title="Notificações" style="width: 38px; height: 38px;">
                     <i data-lucide="bell"></i>
                     <span id="notifBadge" class="badge" style="display:none;"></span>
                 </button>
-                <button class="icon-btn-premium" onclick="toggleOnlineList()" style="width: 38px; height: 38px;">
+                <button class="icon-btn-premium" onclick="toggleOnlineList()" title="Pessoas Online" style="width: 38px; height: 38px;">
                     <i data-lucide="users"></i>
                     <span id="onlineCount" class="badge">0</span>
                 </button>
-                <button class="icon-btn-premium" onclick="abrirMessages()" style="width: 38px; height: 38px;">
-                    <i data-lucide="message-circle"></i>
-                    <span id="msgBadge" class="badge" style="display:none;"></span>
+                <button class="icon-btn-premium" onclick="abrirAmigosMobile()" title="Buscar Amigos" style="width: 38px; height: 38px;">
+                    <i data-lucide="user-plus"></i>
+                </button>
+                <button class="icon-btn-premium" onclick="abrirSelecaoVaralMobile()" title="Meus Varais" style="width: 38px; height: 38px;">
+                    <i data-lucide="layout-grid"></i>
                 </button>
             </div>
 
@@ -197,6 +199,29 @@
 </div>
 </div>
 
+</div>
+
+<!-- MODAL BUSCAR AMIGOS (FOLLOW) -->
+<div id="modalAmigosMobile" class="modal">
+    <div class="modal-content glass" style="width: 100%; height: 100%; max-width: 100%; border-radius: 0; padding: 0;">
+        <div style="padding: 15px 20px; border-bottom: 1px solid var(--glass-border); display: flex; justify-content: space-between; align-items: center; background: white;">
+            <h3 style="margin: 0; color: var(--primary); display: flex; align-items: center; gap: 8px;">
+                <i data-lucide="user-plus"></i> Descobrir Pessoas
+            </h3>
+            <button onclick="fecharAmigosMobile()" class="icon-btn-premium"><i data-lucide="x"></i></button>
+        </div>
+        <div style="padding: 15px;">
+            <input type="text" id="srchAmigoInput" class="search-box" style="width:100%; height:45px;" placeholder="Pesquisar por nome ou @usuário..." oninput="buscarAmigosMobile(this.value)">
+        </div>
+        <div id="amigosListMobile" style="flex: 1; overflow-y: auto; padding: 0 15px; display: flex; flex-direction: column; gap: 10px;">
+            <div style="text-align: center; color: #666; padding: 40px;">Pesquise para encontrar amigos! 🔍</div>
+        </div>
+    </div>
+</div>
+
+
+
+
 <!-- MODAL ANIVERSARIANTES -->
 <div id="modalAnniversaries" class="modal">
     <div class="modal-content glass" style="width: 100%; height: 100%; max-width: 100%; border-radius: 0; padding: 0;">
@@ -220,9 +245,14 @@
             <span style="color: #ccc;">|</span>
             <h2 id="display-nome-varal-mobile" style="margin: 0; font-size: 13px; font-weight: 600; color: #1877f2;">Família</h2>
         </div>
-        <button onclick="fecharVaralParticular()" style="background: linear-gradient(135deg, #f43f5e, #fb7185); color: white; border: none; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 12px rgba(244, 63, 94, 0.3);">
-            <i data-lucide="x" style="width: 24px; height: 24px;"></i>
-        </button>
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <button id="btn-sair-grupo-mobile" onclick="sairDoVaralMobile()" style="display: none; background: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0; border-radius: 10px; padding: 6px 10px; font-size: 10px; font-weight: 800; align-items: center; gap: 4px; cursor: pointer;">
+                <i data-lucide="log-out" style="width: 14px; height: 14px;"></i> SAIR
+            </button>
+            <button onclick="fecharVaralParticular()" style="background: linear-gradient(135deg, #f43f5e, #fb7185); color: white; border: none; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 12px rgba(244, 63, 94, 0.3);">
+                <i data-lucide="x" style="width: 24px; height: 24px;"></i>
+            </button>
+        </div>
     </header>
     
     <!-- FAIXA DE PARTICIPANTES (ESTILO STRIP) -->
@@ -332,10 +362,10 @@
     </div>
 </div>
 
-<script src="assets/js/api.js"></script>
-<script src="assets/js/shared-logic.js"></script>
-<script src="assets/js/mobile-logic.js"></script>
-<script src="assets/js/mobile-varal-particular.js"></script>
+<script src="assets/js/api.js?v=3"></script>
+<script src="assets/js/shared-logic.js?v=3"></script>
+<script src="assets/js/mobile-logic.js?v=3"></script>
+<script src="assets/js/mobile-varal-particular.js?v=3"></script>
 
 <script>
     // Inicialização Mobile
@@ -370,6 +400,13 @@
                 });
             }
         });
+    }
+
+    function btnResetCache() {
+        if (confirm("Deseja limpar todos os dados do App e fazer login novamente? Isso resolve problemas de sincronização.")) {
+            localStorage.clear();
+            location.reload();
+        }
     }
 
     function checkAuth() {

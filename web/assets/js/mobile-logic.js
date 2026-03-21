@@ -604,50 +604,87 @@ async function renderSelectVaralListMobile() {
     container.innerHTML = "<div style='text-align:center; padding:40px; color:#666;'>Buscando...</div>";
 
     try {
+        console.log("Chamando API para listar varais...");
         const res = await fetch(`${API_BASE}/varais`, { headers: updateAuthHeaders() });
+        console.log("Resposta da API (status):", res.status);
+        
         const varais = await res.json();
         container.innerHTML = "";
 
-        if (varais.length === 0) {
-            container.innerHTML = `
-                <div style="text-align:center; padding:40px; color:#94a3b8;">
-                    <i data-lucide="inbox" style="width:40px; height:40px; margin-bottom:10px; opacity:0.5;"></i>
-                    <p>Nenhum varal particular encontrado.</p>
-                </div>
-            `;
-            if (typeof lucide !== 'undefined') lucide.createIcons();
-            return;
+        // --- OPÇÃO: MEU VARAL PESSOAL (LEGACY) ---
+        const personalCard = document.createElement("div");
+        personalCard.style = `
+            background: linear-gradient(135deg, #ffffff, #f8faff);
+            border: 2px solid var(--primary);
+            border-radius: 20px;
+            padding: 18px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            box-shadow: 0 4px 15px rgba(24, 119, 242, 0.1);
+            margin-bottom: 15px;
+        `;
+        personalCard.onclick = () => {
+            console.log("Abrindo Varal Pessoal (null)");
+            fecharSelecaoVaralMobile();
+            const modal = document.getElementById("modalVaralParticular");
+            if (modal) modal.style.display = "flex";
+            if (typeof initMobileVaral === "function") initMobileVaral(null); 
+        };
+        personalCard.innerHTML = `
+            <div style="width: 45px; height: 45px; background: var(--primary); color: white; border-radius: 14px; display: flex; align-items: center; justify-content: center;">
+                <i data-lucide="user"></i>
+            </div>
+            <div style="flex: 1;">
+                <div style="font-weight: 800; font-size: 16px; color: var(--primary);">Meu Varal Pessoal</div>
+                <div style="font-size: 11px; color: #64748b; margin-top: 2px;">Seu espaço individual</div>
+            </div>
+            <i data-lucide="star" style="color: #f59e0b; width: 18px;"></i>
+        `;
+        container.appendChild(personalCard);
+
+        if (!Array.isArray(varais) || varais.length === 0) {
+            console.warn("Nenhum grupo particular retornado ou erro no formato.");
+            const noGroupsRes = document.createElement("div");
+            noGroupsRes.style = "text-align:center; padding:20px; color:#94a3b8; font-size: 13px;";
+            noGroupsRes.innerHTML = `<p>${!Array.isArray(varais) ? "Erro no formato dos dados." : "Nenhum grupo particular encontrado."}</p>
+                                     <small style="opacity: 0.5;">Status: ${res.status}</small>`;
+            container.appendChild(noGroupsRes);
+        } else {
+            varais.forEach(v => {
+                const card = document.createElement("div");
+                card.style = `
+                    background: white;
+                    border: 1px solid #e2e8f0;
+                    border-radius: 20px;
+                    padding: 18px;
+                    display: flex;
+                    align-items: center;
+                    gap: 15px;
+                    box-shadow: 0 4px 10px rgba(0,0,0,0.02);
+                    margin-bottom: 10px;
+                `;
+                card.onclick = () => {
+                    console.log("Abrindo Varal de Grupo:", v.id);
+                    fecharSelecaoVaralMobile();
+                    const modal = document.getElementById("modalVaralParticular");
+                    if (modal) modal.style.display = "flex";
+                    if (typeof initMobileVaral === "function") initMobileVaral(v.id);
+                };
+
+                card.innerHTML = `
+                    <div style="width: 45px; height: 45px; background: #f0f7ff; color: #64748b; border-radius: 14px; display: flex; align-items: center; justify-content: center;">
+                        <i data-lucide="layers"></i>
+                    </div>
+                    <div style="flex: 1;">
+                        <div style="font-weight: 800; font-size: 16px; color: #1e293b;">${v.name}</div>
+                        <div style="font-size: 12px; color: #64748b; margin-top: 2px;">${v.participants_count} participantes</div>
+                    </div>
+                    <i data-lucide="chevron-right" style="color: #cbd5e1; width: 18px;"></i>
+                `;
+                container.appendChild(card);
+            });
         }
-
-        varais.forEach(v => {
-            const card = document.createElement("div");
-            card.style = `
-                background: white;
-                border: 1px solid #e2e8f0;
-                border-radius: 20px;
-                padding: 18px;
-                display: flex;
-                align-items: center;
-                gap: 15px;
-                box-shadow: 0 4px 10px rgba(0,0,0,0.03);
-            `;
-            card.onclick = () => {
-                fecharSelecaoVaralMobile();
-                abrirVaralParticular(v.id);
-            };
-
-            card.innerHTML = `
-                <div style="width: 45px; height: 45px; background: #f0f7ff; color: var(--primary); border-radius: 14px; display: flex; align-items: center; justify-content: center;">
-                    <i data-lucide="layers"></i>
-                </div>
-                <div style="flex: 1;">
-                    <div style="font-weight: 800; font-size: 16px; color: #1e293b;">${v.name}</div>
-                    <div style="font-size: 12px; color: #64748b; margin-top: 2px;">${v.participants_count} participantes</div>
-                </div>
-                <i data-lucide="chevron-right" style="color: #cbd5e1; width: 18px;"></i>
-            `;
-            container.appendChild(card);
-        });
         if (typeof lucide !== 'undefined') lucide.createIcons();
     } catch (e) {
         container.innerHTML = "Erro ao carregar varais.";
@@ -839,11 +876,10 @@ async function colarMediaAreaTransferenciaMobile() {
         }
 
         if (!fileFound) {
-            alert("Nenhuma imagem encontrada na área de transferência. Pode não haver imagens válidas ou copiadas.");
+            alert("Nenhuma imagem encontrada na área de transferência.");
         }
     } catch (err) {
         console.error("Erro ao colar da área de transferência:", err);
-        alert(`Não foi possível colar (talvez precisemos de HTTPS ou permissão do site). DICA: Segure o dedo na caixa "Legenda" abaixo e escolha Colar.`);
     }
 }
 
@@ -852,7 +888,6 @@ document.addEventListener('paste', (e) => {
     const modalUpload = document.getElementById("modalUpload");
     if (modalUpload && window.getComputedStyle(modalUpload).display !== "none") {
         const items = (e.clipboardData || window.clipboardData).items;
-        
         for (let index in items) {
             const item = items[index];
             if (item.kind === 'file' && item.type.startsWith('image/')) {
@@ -861,13 +896,99 @@ document.addEventListener('paste', (e) => {
                     const dataTransfer = new DataTransfer();
                     dataTransfer.items.add(blob);
                     document.getElementById('mediaFile').files = dataTransfer.files;
-                    
                     mostrarPreviewMobile(blob);
-                    console.log("Mídia interceptada via evento genérico de Colar!");
-                    e.preventDefault(); // Evita colar como base64 enorme dentro da textarea
+                    e.preventDefault();
                     return;
                 }
             }
         }
     }
 });
+
+// --- GOAL: REDE SOCIAL E LISTAGEM DE VARAIS (AMIGOS E FOLLOW) ---
+
+function abrirAmigosMobile() {
+    const modal = document.getElementById("modalAmigosMobile");
+    if (modal) {
+        modal.style.display = "flex";
+        document.getElementById("srchAmigoInput").value = "";
+        document.getElementById("amigosListMobile").innerHTML = "<div style='text-align: center; color: #666; padding: 40px;'>Pesquise para encontrar amigos! 🔍</div>";
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+    }
+}
+
+function fecharAmigosMobile() {
+    document.getElementById("modalAmigosMobile").style.display = "none";
+}
+
+let amigoSearchTimer = null;
+async function buscarAmigosMobile(q) {
+    const container = document.getElementById("amigosListMobile");
+    if (!q || q.length < 2) {
+        container.innerHTML = "<div style='text-align: center; color: #666; padding: 40px;'>Digite ao menos 2 caracteres...</div>";
+        return;
+    }
+
+    clearTimeout(amigoSearchTimer);
+    amigoSearchTimer = setTimeout(async () => {
+        container.innerHTML = "<div style='text-align: center; color: #666; padding: 40px;'>Buscando...</div>";
+        try {
+            const res = await fetch(`${API_BASE}/users/search?q=${encodeURIComponent(q)}`, { headers: updateAuthHeaders() });
+            const users = await res.json();
+            renderAmigosListMobile(users);
+        } catch (e) {
+            container.innerHTML = "Erro ao buscar usuários.";
+        }
+    }, 400);
+}
+
+function renderAmigosListMobile(users) {
+    const container = document.getElementById("amigosListMobile");
+    if (!container) return;
+    container.innerHTML = "";
+    if (users.length === 0) {
+        container.innerHTML = "<div style='text-align: center; color: #666; padding: 40px;'>Nenhum usuário encontrado.</div>";
+        return;
+    }
+    users.forEach(u => {
+        if (currentUser && u.id === currentUser.id) return;
+        const div = document.createElement("div");
+        div.style = "background: white; border: 1px solid #f1f5f9; border-radius: 15px; padding: 12px; display: flex; align-items: center; gap: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.02);";
+        div.innerHTML = `
+            <div class="user-avatar" style="width:40px; height:40px; font-size:14px; font-weight:800; background: var(--primary); color:white;">${u.name[0].toUpperCase()}</div>
+            <div style="flex: 1;">
+                <div style="font-weight: 700; font-size: 14px;">${u.name}</div>
+                <div style="font-size: 12px; color: #64748b;">@${u.username}</div>
+            </div>
+            <button onclick="seguirUsuario(${u.id}, this)" class="btn-pendurar-premium" style="padding: 6px 12px; height: 32px; font-size: 12px; background: #e7f3ff; color: #1877f2; border: none;">
+                SEGUIR
+            </button>
+        `;
+        container.appendChild(div);
+    });
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+}
+
+async function seguirUsuario(id, btn) {
+    try {
+        const res = await fetch(`${API_BASE}/follow/${id}`, {
+            method: "POST",
+            headers: updateAuthHeaders()
+        });
+        if (res.ok) {
+            btn.textContent = "SEGUINDO";
+            btn.style.background = "#f0fdf4";
+            btn.style.color = "#16a34a";
+            btn.disabled = true;
+        } else {
+            const data = await res.json();
+            alert(data.error || "Erro ao seguir");
+        }
+    } catch (e) { alert("Erro na conexão."); }
+}
+
+function renderListaVaraisMobile() {
+    if (typeof renderSelectVaralListMobile === "function") {
+        renderSelectVaralListMobile();
+    }
+}
