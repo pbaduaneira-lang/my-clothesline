@@ -481,7 +481,21 @@
         
         if (typeof lucide !== 'undefined') lucide.createIcons();
     }
-    function fecharUpload() { document.getElementById("modalUpload").style.display = "none"; }
+    function fecharUpload() { 
+        document.getElementById("modalUpload").style.display = "none";
+        // Limpa o preview de mídia
+        if (typeof limparMediaUploadMobile === "function") limparMediaUploadMobile();
+        // Limpa inputs
+        const fileInput = document.getElementById("mediaFile");
+        if (fileInput) fileInput.value = "";
+        const caption = document.getElementById("caption");
+        if (caption) caption.value = "";
+        // Restaura botões de upload ao estado original
+        const btnGeral = document.getElementById("btnPostarGeral");
+        const btnPrivado = document.getElementById("btnPostarPrivado");
+        if (btnGeral) { btnGeral.disabled = false; btnGeral.textContent = "Pendurar no Feed"; }
+        if (btnPrivado) { btnPrivado.disabled = false; btnPrivado.textContent = "Postar no Varal Particular"; }
+    }
 
     function abrirMessages() { 
         document.getElementById("modalMessages").style.display = "flex"; 
@@ -519,12 +533,15 @@
         const caption = document.getElementById("caption").value;
         if (!fileInput.files[0]) return alert("Selecione uma foto ou vídeo");
 
+        // Feedback visual de loading
+        const btn = document.getElementById("btnPostarPrivado");
+        if (btn) { btn.disabled = true; btn.textContent = "Enviando..."; }
+
         // Comprime a imagem antes do upload (vídeos passam sem alteração)
         const arquivoOriginal = fileInput.files[0];
         const arquivoOtimizado = await comprimirImagem(arquivoOriginal);
 
         const formData = new FormData();
-        // Marcamos como privado para identificação local posterior
         formData.append("is_private", "true");
         formData.append("caption", caption);
         formData.append("media", arquivoOtimizado);
@@ -540,12 +557,10 @@
             
             const novoPost = data;
             
-            // INDEPENDÊNCIA: Salva o ID localmente como privado para não vazar no feed global
             const privateIds = JSON.parse(localStorage.getItem("private_post_ids") || "[]");
             privateIds.push(novoPost.id);
             localStorage.setItem("private_post_ids", JSON.stringify(privateIds));
 
-            // Salva no Banco de Dados via API Sincronizada
             await fetch(`${API_BASE}/varal/item`, {
                 method: "POST",
                 headers: { 
@@ -554,17 +569,15 @@
                 },
                 body: JSON.stringify({
                     type: 'post',
-                    content: JSON.stringify(novoPost) // Salvamos o objeto post serializado ou o ID
+                    content: JSON.stringify(novoPost)
                 })
             });
 
             fecharUpload();
-            console.log("Post Privado enviado e sincronizado no DB.");
-            
-            // Recarrega tudo para garantir sincronia
             if (typeof initMobileVaral === "function") initMobileVaral();
             loadFeed(); 
         } catch(e) { 
+            if (btn) { btn.disabled = false; btn.textContent = "Postar no Varal Particular"; }
             console.error("Erro no upload privado:", e);
             alert(e.message); 
         }
@@ -574,6 +587,10 @@
         const fileInput = document.getElementById("mediaFile");
         const caption = document.getElementById("caption").value;
         if (!fileInput.files[0]) return alert("Selecione uma foto ou vídeo");
+
+        // Feedback visual de loading
+        const btn = document.getElementById("btnPostarGeral");
+        if (btn) { btn.disabled = true; btn.textContent = "Enviando..."; }
 
         // Comprime a imagem antes do upload (vídeos passam sem alteração)
         const arquivoOriginal = fileInput.files[0];
@@ -595,7 +612,10 @@
             fecharUpload();
             loadFeed();
             alert("Pendurado com sucesso! ✨");
-        } catch(e) { alert(e.message); }
+        } catch(e) { 
+            if (btn) { btn.disabled = false; btn.textContent = "Pendurar no Feed"; }
+            alert(e.message); 
+        }
     }
 </script>
 </body>

@@ -535,6 +535,10 @@ async function pendurarNoVaralParticular() {
     const caption = document.getElementById("caption").value;
     if (!fileInput.files[0]) return alert("Selecione uma foto ou vídeo");
 
+    // Feedback visual de loading
+    const btn = document.getElementById("btnPostarPrivado");
+    if (btn) { btn.disabled = true; btn.textContent = "Enviando..."; }
+
     // Comprime a imagem antes do upload (vídeos passam sem alteração)
     const arquivoOriginal = fileInput.files[0];
     const arquivoOtimizado = await comprimirImagem(arquivoOriginal);
@@ -554,12 +558,10 @@ async function pendurarNoVaralParticular() {
         
         const novoPost = await res.json();
         
-        // INDEPENDÊNCIA: Salva o ID localmente como privado
         const privateIds = JSON.parse(localStorage.getItem("private_post_ids") || "[]");
         privateIds.push(novoPost.id);
         localStorage.setItem("private_post_ids", JSON.stringify(privateIds));
 
-        // Salva no Banco de Dados via API Sincronizada (Respeitando o grupo se houver)
         const urlRequest = currentVaralIdMobile ? `${API_BASE}/varais/item` : `${API_BASE}/varal/item`;
         await fetch(urlRequest, {
             method: "POST",
@@ -575,12 +577,10 @@ async function pendurarNoVaralParticular() {
         });
 
         fecharUpload();
-        console.log("Post Privado enviado e sincronizado no DB.");
-        
-        // Recarrega o varal com o contexto atual
         initMobileVaral(currentVaralIdMobile);
         loadFeed(); 
     } catch(e) { 
+        if (btn) { btn.disabled = false; btn.textContent = "Postar no Varal Particular"; }
         console.error("Erro no upload privado mobile:", e);
         alert(e.message); 
     }
