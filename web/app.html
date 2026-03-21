@@ -239,17 +239,17 @@
 
 <!-- MODAL VARAL PARTICULAR MOBILE (APENAS CABEÇALHO POR ENQUANTO) -->
 <div id="modalVaralParticular" class="modal" style="display: none; background: #f0f7ff; width: 100vw; height: 100vh; position: fixed; top: 0; left: 0; z-index: 9999; flex-direction: column; align-items: stretch; justify-content: flex-start;">
-    <header class="mobile-varal-header" style="width: 100%; height: 45px; background: white; display: flex; align-items: center; justify-content: space-between; padding: 0 15px; border-bottom: 2px solid #1877f2; box-sizing: border-box;">
+    <header class="mobile-varal-header" style="width: 100%; background: white; display: flex; align-items: center; justify-content: space-between; padding: 0 15px; border-bottom: 2px solid #1877f2; box-sizing: border-box; flex-shrink: 0;">
         <div class="logo-section" style="display: flex; flex-direction: row; align-items: center; gap: 8px;">
-            <h1 style="margin: 0; font-size: 14px; font-weight: 900; color: #1c1e21; text-transform: uppercase;">Varal Particular</h1>
+            <h1 style="margin: 0; font-size: 16px; font-weight: 900; color: #1c1e21; text-transform: uppercase;">Varal Particular</h1>
             <span style="color: #ccc;">|</span>
-            <h2 id="display-nome-varal-mobile" style="margin: 0; font-size: 13px; font-weight: 600; color: #1877f2;">Família</h2>
+            <h2 id="display-nome-varal-mobile" style="margin: 0; font-size: 14px; font-weight: 600; color: #1877f2;">Família</h2>
         </div>
         <div style="display: flex; align-items: center; gap: 10px;">
-            <button id="btn-sair-grupo-mobile" onclick="sairDoVaralMobile()" style="display: none; background: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0; border-radius: 10px; padding: 6px 10px; font-size: 10px; font-weight: 800; align-items: center; gap: 4px; cursor: pointer;">
-                <i data-lucide="log-out" style="width: 14px; height: 14px;"></i> SAIR
+            <button id="btn-sair-grupo-mobile" onclick="sairDoVaralMobile()" style="display: none; background: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0; border-radius: 10px; padding: 8px 12px; font-size: 12px; font-weight: 800; align-items: center; gap: 6px; cursor: pointer;">
+                <i data-lucide="log-out" style="width: 16px; height: 16px;"></i> SAIR
             </button>
-            <button onclick="fecharVaralParticular()" style="background: linear-gradient(135deg, #f43f5e, #fb7185); color: white; border: none; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 12px rgba(244, 63, 94, 0.3);">
+            <button onclick="fecharVaralParticular()" style="background: linear-gradient(135deg, #f43f5e, #fb7185); color: white; border: none; width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 12px rgba(244, 63, 94, 0.3);">
                 <i data-lucide="x" style="width: 24px; height: 24px;"></i>
             </button>
         </div>

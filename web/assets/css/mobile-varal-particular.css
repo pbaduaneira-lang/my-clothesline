@@ -76,12 +76,13 @@
 
 /* SIDEBAR (HORIZONTAl NO MOBILE) */
 .mobile-pessoas-strip {
-    height: 60px;
+    height: 70px;
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 0 10px;
-    margin-top: -10px; /* Sobe a faixa para encostar totalmente no header */
+    gap: 12px;
+    padding: 10px 15px;
+    margin-top: 10px; /* Removendo a margem negativa para não sobrepor o header */
+    margin-bottom: 5px;
     overflow-x: auto;
     scrollbar-width: none;
     -ms-overflow-style: none;
