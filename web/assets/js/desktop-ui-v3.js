@@ -34,7 +34,7 @@ function renderFeed() {
         ).join("");
 
         let mediaHtml = postType === "video" 
-            ? `<video class="media" preload="none" loop playsinline src="${mediaUrl}" onclick="abrirCinema('${mediaUrl}', 'video')"></video>` 
+            ? `<video class="media" preload="metadata" loop playsinline src="${mediaUrl}" onclick="abrirCinema('${mediaUrl}', 'video')"></video>` 
             : `<img class="media" src="${mediaUrl}" loading="lazy" onclick="abrirCinema('${mediaUrl}', 'image')">`;
         let videoIndicator = postType === "video" ? `<div class="video-indicator"><i data-lucide="play"></i></div>` : "";
         

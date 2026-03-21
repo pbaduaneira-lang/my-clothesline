@@ -336,18 +336,40 @@
     }
 
     function abrirUpload() { document.getElementById("modalUpload").style.display = "flex"; }
-    function fecharUpload() { document.getElementById("modalUpload").style.display = "none"; }
+    
+    function fecharUpload() { 
+        document.getElementById("modalUpload").style.display = "none";
+        // Limpa campos e previews
+        document.getElementById("mediaFile").value = "";
+        document.getElementById("caption").value = "";
+        const btn = document.querySelector("#modalUpload button[onclick='pendurarPost()']");
+        if (btn) {
+            btn.disabled = false;
+            btn.textContent = "Pendurar Agora";
+        }
+    }
 
     async function pendurarPost() {
         const fileInput = document.getElementById("mediaFile");
         const caption = document.getElementById("caption").value;
         if (!fileInput.files[0]) return alert("Selecione um arquivo");
 
-        const formData = new FormData();
-        formData.append("media", fileInput.files[0]);
-        formData.append("caption", caption);
+        // Feedback visual de loading
+        const btn = document.querySelector("#modalUpload button[onclick='pendurarPost()']");
+        if (btn) {
+            btn.disabled = true;
+            btn.textContent = "Enviando...";
+        }
 
         try {
+            // Comprime a imagem antes do upload
+            const arquivoOriginal = fileInput.files[0];
+            const arquivoOtimizado = await comprimirImagem(arquivoOriginal);
+
+            const formData = new FormData();
+            formData.append("media", arquivoOtimizado);
+            formData.append("caption", caption);
+
             const res = await fetch(`${API_BASE}/post`, {
                 method: "POST",
                 headers: { "Authorization": `Bearer ${token}` },
@@ -357,11 +379,15 @@
             if (!res.ok) throw new Error(data.error || `Erro ${res.status}`);
             
             fecharUpload();
-            loadFeed();
+            if (typeof loadFeed === 'function') loadFeed();
             alert("Pendurado com sucesso! ✨");
         } catch(e) { 
             console.error("Erro no upload:", e);
             alert(`Falha ao pendurar: ${e.message}`); 
+            if (btn) {
+                btn.disabled = false;
+                btn.textContent = "Pendurar Agora";
+            }
         }
     }
 

@@ -141,10 +141,17 @@ function renderVaralItems(filter = "") {
     const nomesPessoas = pessoas.map(p => p.content.toLowerCase());
     
     // FILTRAGEM DE POSTS REAIS (Posts do Nanobanana agora só aparecem se ele for incluído manualmente)
-    let postsFiltrados = postsData.filter(post => {
-        const autor = (post.author_name || "").toLowerCase();
-        return nomesPessoas.includes(autor);
-    });
+    // Somente para o Varal Pessoal. Grupos são 100% isolados por ID.
+    let postsFiltrados = [];
+    if (!currentVaralId) {
+        let pessoas = varalData.itens.filter(i => i.type === 'person');
+        const nomesPessoas = pessoas.map(p => p.content.toLowerCase());
+        
+        postsFiltrados = postsData.filter(post => {
+            const autor = (post.author_name || "").toLowerCase();
+            return nomesPessoas.includes(autor);
+        });
+    }
 
     const itensUnificados = [
         ...varalData.itens.filter(i => i.type === 'message').map(m => ({ 
@@ -217,9 +224,9 @@ function renderVaralItems(filter = "") {
             const mediaUrl = getMediaUrl(item);
             const postType = detectPostType(item, mediaUrl);
             
-            let mediaHtml = postType === "video" 
-                ? `<video class="media" preload="auto" loop autoplay playsinline src="${mediaUrl}" onclick="abrirCinema('${mediaUrl}', 'video')"></video>` 
-                : `<img class="media" src="${mediaUrl}" onclick="abrirCinema('${mediaUrl}', 'image')">`;
+            const mediaHtml = postType === "video" 
+                ? `<video class="media" preload="metadata" loop playsinline src="${mediaUrl}"></video>` 
+                : `<img class="media" src="${mediaUrl}" loading="lazy">`;
 
             const delay = (Math.random() * -5).toFixed(2); // Delay negativo para começar em pontos diferentes
             itemDiv.style.animationDelay = `0s, ${delay}s`; // slideUp começa na hora, swayVaral tem o delay
@@ -612,13 +619,26 @@ async function pendurarArquivo(input) {
     const file = input.files[0];
     if (!file) return;
 
-    const formData = new FormData();
-    formData.append("is_private", "true");
-    formData.append("caption", ""); 
-    formData.append("media", file);
+    // Feedback visual
+    const btn = document.querySelector(".btn-pendurar");
+    const originalContent = btn ? btn.innerHTML : "";
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = `<i data-lucide="loader" class="spin"></i><span>Enviando...</span>`;
+        if (window.lucide) lucide.createIcons();
+    }
 
     try {
         console.log("Iniciando upload para o varal...");
+        
+        // Comprime a imagem antes do upload
+        const arquivoOtimizado = await comprimirImagem(file);
+
+        const formData = new FormData();
+        formData.append("is_private", "true");
+        formData.append("caption", ""); 
+        formData.append("media", arquivoOtimizado);
+
         const response = await fetch(`${API_BASE}/post`, {
             method: "POST",
             headers: updateAuthHeaders(),
@@ -645,7 +665,13 @@ async function pendurarArquivo(input) {
         initVaralDesktop(); 
     } catch (e) {
         console.error(e);
-        alert("Erro ao pendurar arquivo.");
+        alert("Erro ao pendurar arquivo: " + e.message);
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = originalContent;
+            if (window.lucide) lucide.createIcons();
+        }
     }
 }
 
