@@ -25,8 +25,8 @@ function renderFeed() {
                 
                 <div class="media-container">
                     ${postType === 'video' 
-                        ? `<video src="${mediaUrl}" muted loop playsinline preload="metadata"></video>` 
-                        : `<img src="${mediaUrl}">`}
+                        ? `<video src="${mediaUrl}" muted loop playsinline preload="none"></video>` 
+                        : `<img src="${mediaUrl}" loading="lazy">`}
                 </div>
             </div>
         `;

@@ -166,8 +166,8 @@ function renderMobileVaral() {
             const postType = detectPostType(item, mediaUrl);
             
             let mediaHtml = postType === "video" 
-                ? `<video src="${mediaUrl}" muted loop playsinline style="width: 100%; height: 100%; object-fit: cover;" onclick="abrirCinemaMobile('${mediaUrl}', 'video')"></video>` 
-                : `<img src="${mediaUrl}" style="width: 100%; height: 100%; object-fit: cover;" onclick="abrirCinemaMobile('${mediaUrl}', 'image')">`;
+                ? `<video src="${mediaUrl}" muted loop playsinline preload="none" style="width: 100%; height: 100%; object-fit: cover;" onclick="abrirCinemaMobile('${mediaUrl}', 'video')"></video>` 
+                : `<img src="${mediaUrl}" loading="lazy" style="width: 100%; height: 100%; object-fit: cover;" onclick="abrirCinemaMobile('${mediaUrl}', 'image')">`;
 
             return `
                 <div class="mobile-varal-item" style="scroll-snap-align: center; flex-shrink: 0; width: 260px; height: 380px; background: white; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.08); overflow: hidden; display: flex; flex-direction: column; position: relative;">
