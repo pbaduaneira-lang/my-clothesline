@@ -535,10 +535,14 @@ async function pendurarNoVaralParticular() {
     const caption = document.getElementById("caption").value;
     if (!fileInput.files[0]) return alert("Selecione uma foto ou vídeo");
 
+    // Comprime a imagem antes do upload (vídeos passam sem alteração)
+    const arquivoOriginal = fileInput.files[0];
+    const arquivoOtimizado = await comprimirImagem(arquivoOriginal);
+
     const formData = new FormData();
     formData.append("is_private", "true");
     formData.append("caption", caption);
-    formData.append("media", fileInput.files[0]);
+    formData.append("media", arquivoOtimizado);
 
     try {
         const res = await fetch(`${API_BASE}/post`, {

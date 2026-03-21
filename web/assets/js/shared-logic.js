@@ -1,5 +1,62 @@
 // LÓGICA COMPARTILHADA (SHARED LOGIC)
 
+/**
+ * Comprime uma imagem antes do upload usando Canvas API.
+ * Reduz de 5-15MB (foto de celular) para ~200-500KB.
+ * Vídeos são retornados sem alteração.
+ * @param {File} file - Arquivo original
+ * @param {number} maxWidth - Largura máxima (default: 1200px)
+ * @param {number} quality - Qualidade JPEG 0-1 (default: 0.7)
+ * @returns {Promise<File>} - Arquivo comprimido ou original (se vídeo)
+ */
+async function comprimirImagem(file, maxWidth = 1200, quality = 0.7) {
+    // Se não for imagem, retorna o original (ex: vídeos)
+    if (!file.type.startsWith('image/')) return file;
+    // GIFs não devem ser comprimidos (perdem animação)
+    if (file.type === 'image/gif') return file;
+
+    return new Promise((resolve) => {
+        const img = new Image();
+        const reader = new FileReader();
+        
+        reader.onload = (e) => {
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                let width = img.width;
+                let height = img.height;
+
+                // Redimensiona proporcionalmente se for maior que maxWidth
+                if (width > maxWidth) {
+                    height = Math.round((height * maxWidth) / width);
+                    width = maxWidth;
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+
+                canvas.toBlob((blob) => {
+                    if (blob) {
+                        const compressed = new File([blob], file.name, {
+                            type: 'image/jpeg',
+                            lastModified: Date.now()
+                        });
+                        console.log(`[Compressão] ${(file.size/1024/1024).toFixed(1)}MB → ${(compressed.size/1024/1024).toFixed(1)}MB`);
+                        resolve(compressed);
+                    } else {
+                        resolve(file); // Fallback: retorna original
+                    }
+                }, 'image/jpeg', quality);
+            };
+            img.onerror = () => resolve(file); // Fallback
+            img.src = e.target.result;
+        };
+        reader.onerror = () => resolve(file); // Fallback
+        reader.readAsDataURL(file);
+    });
+}
+
 let postsData = [];
 let viewingUserId = null;
 let audioUnlocked = false;
