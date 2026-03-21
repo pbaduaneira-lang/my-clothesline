@@ -372,6 +372,7 @@
     window.onload = () => {
         if (checkAuth()) {
             loadFeed();
+            if (typeof fetchAnniversaryCount === 'function') fetchAnniversaryCount();
             setInterval(() => loadFeed(true), 15000);
             setInterval(updateOnlineStatus, 30000);
             setInterval(updateUnreadCount, 10000);

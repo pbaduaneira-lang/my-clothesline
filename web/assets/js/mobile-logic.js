@@ -1,5 +1,7 @@
 // LÓGICA DE UI MOBILE (APP-MÓVEL)
 
+let hoyAniversariosCount = 0;
+
 function renderFeed() {
     const feed = document.getElementById("feed");
     const scene = document.getElementById("scene");
@@ -25,7 +27,7 @@ function renderFeed() {
                 
                 <div class="media-container">
                     ${postType === 'video' 
-                        ? `<video src="${mediaUrl}" muted loop playsinline preload="none"></video>` 
+                        ? `<video src="${mediaUrl}" muted loop playsinline preload="metadata"></video>` 
                         : `<img src="${mediaUrl}" loading="lazy">`}
                 </div>
             </div>
@@ -125,11 +127,11 @@ function updateMobileFocus(post) {
 
             <!-- Botões de Ação do Post - Estilo Premium Colorido Diferenciado -->
             <button class="btn-action-premium-pink" onclick="abrirAniversarios()">
-                ANIVERSÁRIOS
+                ANIVERSÁRIOS ${hoyAniversariosCount > 0 ? `(${hoyAniversariosCount})` : ''}
             </button>
 
             <button class="btn-action-premium-purple" onclick="abrirInterfaceComentarioMobile(${post.id})">
-                COMENTÁRIOS
+                COMENTÁRIOS ${(post.comments || []).length > 0 ? `(${(post.comments || []).length})` : ''}
             </button>
 
             <button class="btn-action-premium-green" onclick="compartilharPost(${post.id})">
@@ -306,18 +308,26 @@ async function abrirAniversarios() {
         const users = await res.json();
         container.innerHTML = "";
 
+        // Atualiza contagem de hoje antes de renderizar (garante sincronia)
+        let countHoje = 0;
+        const diaHoje = new Date().getUTCDate();
+        const mesHoje = new Date().getUTCMonth();
+
         if (users.length === 0) {
             container.innerHTML = "<div style='padding:40px;text-align:center;color:#666;'>Nenhum aniversariante neste mês. 🎂</div>";
+            hoyAniversariosCount = 0;
             return;
         }
 
         users.forEach(u => {
             const dataObjeto = new Date(u.birth_date);
             const dia = dataObjeto.getUTCDate();
+            const mes = dataObjeto.getUTCMonth();
             const meses = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
-            const mesStr = meses[dataObjeto.getUTCMonth()];
+            const mesStr = meses[mes];
 
-            const isToday = dia === new Date().getDate();
+            const isToday = (dia === diaHoje && mes === mesHoje);
+            if (isToday) countHoje++;
 
             const div = document.createElement("div");
             div.className = "glass";
@@ -347,10 +357,31 @@ async function abrirAniversarios() {
             `;
             container.appendChild(div);
         });
+        
+        // Atualiza variável global e UI se necessário
+        hoyAniversariosCount = countHoje;
         if (typeof lucide !== 'undefined') lucide.createIcons();
-    } catch (e) { 
-        container.innerHTML = "<div style='color: red; text-align: center;'>Erro ao carregar aniversariantes</div>";
+    } catch (e) {
+        console.error("Erro ao carregar aniversários:", e);
+        if (container) container.innerHTML = "<div style='color: red; text-align: center;'>Erro ao carregar aniversariantes</div>";
     }
+}
+
+// Função para buscar contagem silenciosa
+async function fetchAnniversaryCount() {
+    try {
+        const res = await fetch(`${API_BASE}/anniversaries`, { headers: updateAuthHeaders() });
+        const users = await res.json();
+        let countHoje = 0;
+        const diaHoje = new Date().getUTCDate();
+        const mesHoje = new Date().getUTCMonth();
+        
+        users.forEach(u => {
+            const d = new Date(u.birth_date);
+            if (d.getUTCDate() === diaHoje && d.getUTCMonth() === mesHoje) countHoje++;
+        });
+        hoyAniversariosCount = countHoje;
+    } catch(e) {}
 }
 
 function fecharAniversarios() {
