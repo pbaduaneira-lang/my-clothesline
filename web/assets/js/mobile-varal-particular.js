@@ -13,7 +13,15 @@ let currentVaralIdMobile = null;
 async function initMobileVaral(id = null) {
     currentVaralIdMobile = id;
     mobileVaralData.itens = []; // Limpa cache anterior
-    renderMobileVaral();        // Mostra estado de limpeza/loading
+    
+    const canvas = document.getElementById("mobile-varal-canvas");
+    if (canvas) {
+        canvas.innerHTML = `<div style="text-align:center; color: var(--primary); width: 100%; padding: 60px 20px;">
+            <div class="spinner-mobile" style="width: 40px; height: 40px; border: 4px solid rgba(0,0,0,0.1); border-top-color: var(--primary); border-radius: 50%; margin: 0 auto 15px; animation: spin 1s linear infinite;"></div>
+            <p style="font-weight: 700;">Abrindo seu varal...</p>
+        </div>
+        <style>@keyframes spin { to { transform: rotate(360deg); } }</style>`;
+    }
     
     try {
         let res;
@@ -115,13 +123,19 @@ function renderMobileVaral() {
     if (!canvas) return;
 
     // PARIDADE: Filtragem dinâmica de posts do Nanobanana ou pessoas incluídas
-    let pessoas = mobileVaralData.itens.filter(i => i.type === 'person');
-    const nomesPessoas = pessoas.map(p => p.content.toLowerCase());
-    
-    let postsFiltrados = postsData.filter(post => {
-        const autor = (post.author_name || "").toLowerCase();
-        return nomesPessoas.includes(autor);
-    });
+    // Somente para o Varal Pessoal. Grupos são 100% isolados por ID.
+    let postsFiltrados = [];
+    if (!currentVaralIdMobile) {
+        let pessoas = mobileVaralData.itens.filter(i => i.type === 'person');
+        const nomesPessoas = pessoas.map(p => p.content.toLowerCase());
+        
+        postsFiltrados = postsData.filter(post => {
+            const autor = (post.author_name || "").toLowerCase();
+            const autorId = post.author_id;
+            // Se eu incluí o nome da pessoa ou se sou eu (para ver meus próprios posts públicos no meu varal pessoal)
+            return nomesPessoas.includes(autor);
+        });
+    }
 
     // Unificação de itens (Mensagens, Posts explícitos e Posts filtrados)
     const itensUnificados = [

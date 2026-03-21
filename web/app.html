@@ -561,20 +561,27 @@
             privateIds.push(novoPost.id);
             localStorage.setItem("private_post_ids", JSON.stringify(privateIds));
 
-            await fetch(`${API_BASE}/varal/item`, {
+            // Salva no varal correto: grupo (com varal_id) ou pessoal (sem varal_id)
+            const varalId = (typeof currentVaralIdMobile !== 'undefined') ? currentVaralIdMobile : null;
+            const urlRequest = varalId ? `${API_BASE}/varais/item` : `${API_BASE}/varal/item`;
+            const bodyRequest = {
+                type: 'post',
+                content: JSON.stringify(novoPost)
+            };
+            if (varalId) bodyRequest.varal_id = parseInt(varalId);
+
+            await fetch(urlRequest, {
                 method: "POST",
                 headers: { 
                     "Authorization": `Bearer ${token}`,
                     "Content-Type": "application/json"
                 },
-                body: JSON.stringify({
-                    type: 'post',
-                    content: JSON.stringify(novoPost)
-                })
+                body: JSON.stringify(bodyRequest)
             });
 
             fecharUpload();
-            if (typeof initMobileVaral === "function") initMobileVaral();
+            // Recarrega o varal atual (mantendo o contexto do grupo)
+            if (typeof initMobileVaral === "function") initMobileVaral(varalId);
             loadFeed(); 
         } catch(e) { 
             if (btn) { btn.disabled = false; btn.textContent = "Postar no Varal Particular"; }
