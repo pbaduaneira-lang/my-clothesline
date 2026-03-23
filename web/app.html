@@ -632,5 +632,48 @@
         }
     }
 </script>
+
+<!-- BANNER DE INSTALAÇÃO PWA -->
+<div id="pwaInstallBanner" style="display: none; position: fixed; bottom: 85px; left: 50%; transform: translateX(-50%); background: var(--primary); color: white; padding: 12px 24px; border-radius: 30px; z-index: 10000; box-shadow: 0 10px 25px rgba(249, 115, 22, 0.4); font-weight: 800; align-items: center; gap: 10px; cursor: pointer;">
+    <i data-lucide="download"></i> 
+    <span>Instalar App</span>
+</div>
+
+<script>
+    let deferredPrompt;
+    const installBanner = document.getElementById('pwaInstallBanner');
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+        // Previne o prompt padrão do navegador de aparecer sozinho
+        e.preventDefault();
+        // Guarda o evento para usarmos no nosso botão
+        deferredPrompt = e;
+        // Mostra o nosso banner flutuante
+        installBanner.style.display = 'flex';
+        // Atualiza os ícones do Lucide
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+    });
+
+    installBanner.addEventListener('click', async () => {
+        if (deferredPrompt) {
+            // Mostra o prompt de instalação real do sistema
+            deferredPrompt.prompt();
+            // Espera o usuário responder (Aceitar ou Cancelar)
+            const { outcome } = await deferredPrompt.userChoice;
+            console.log(`User response to the install prompt: ${outcome}`);
+            // Esconde o botão e reseta a variável depois de responder
+            deferredPrompt = null;
+            installBanner.style.display = 'none';
+        }
+    });
+
+    // Se o usuário já instalou, garantimos que o banner esconda caso apareça acidentalmente
+    window.addEventListener('appinstalled', () => {
+        installBanner.style.display = 'none';
+        deferredPrompt = null;
+        console.log('PWA instalado com sucesso');
+    });
+</script>
+
 </body>
 </html>
