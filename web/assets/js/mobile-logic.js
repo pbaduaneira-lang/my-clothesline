@@ -1038,3 +1038,76 @@ function renderListaVaraisMobile() {
         renderSelectVaralListMobile();
     }
 }
+
+// --- FUNÇÕES DE INTERAÇÃO COM O POST (MOBILE) ---
+
+async function curtirPost(postId) {
+    if (!currentUser) {
+        alert("Faça login para curtir!");
+        return;
+    }
+    
+    // Animação visual imediata (Optimistic UI)
+    const btnLike = document.querySelector(`.btn-like-glass[onclick="curtirPost(${postId})"] svg`);
+    if (btnLike) {
+        btnLike.style.transition = "all 0.2s ease";
+        btnLike.style.fill = "#ef4444"; // Coração vermelho
+        btnLike.style.color = "#ef4444";
+        btnLike.style.transform = "scale(1.3)";
+        setTimeout(() => { btnLike.style.transform = "scale(1)"; }, 200);
+    }
+
+    try {
+        const res = await fetch(`${API_BASE}/post/${postId}/like`, {
+            method: "POST",
+            headers: updateAuthHeaders({"Content-Type": "application/json"})
+        });
+        if (!res.ok) console.error("Falha ao registrar curtida no servidor.");
+    } catch (e) {
+        console.error("Erro na curtida:", e);
+    }
+}
+
+async function compartilharPost(postId) {
+    const post = postsData.find(p => p.id === postId);
+    if (!post) return;
+
+    const mediaUrl = getMediaUrl(post);
+
+    try {
+        // 1. Tenta usar a Web Share API Nativa
+        if (navigator.share) {
+            await navigator.share({
+                title: 'My Clothesline',
+                text: 'Dá uma olhada neste post incrível!',
+                url: mediaUrl
+            });
+        } else {
+            // Fallback: copia o link
+            await navigator.clipboard.writeText(mediaUrl);
+            alert("Link da mídia copiado para a área de transferência!");
+        }
+
+        // 2. Animação no botão
+        const btnShare = document.querySelector(`.btn-share-glass[onclick="compartilharPost(${postId})"] svg`);
+        if (btnShare) {
+            btnShare.style.transition = "transform 0.2s ease";
+            btnShare.style.transform = "scale(1.2)";
+            setTimeout(() => { btnShare.style.transform = "scale(1)"; }, 200);
+        }
+
+        // 3. Registra o compartilhamento no backend se o usuário estiver logado
+        if (currentUser) {
+            fetch(`${API_BASE}/post/${postId}/share`, {
+                method: "POST",
+                headers: updateAuthHeaders({"Content-Type": "application/json"})
+            }).catch(e => console.error("Erro ao registrar share:", e));
+        }
+
+    } catch (err) {
+        // Ignora erro se o usuário cancelar o compartilhamento
+        if (err.name !== 'AbortError') {
+            console.error('Erro ao compartilhar:', err);
+        }
+    }
+}
