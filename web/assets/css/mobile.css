@@ -351,7 +351,7 @@ header {
 /* FOCO SUPERIOR SPLIT (ESTILO YOUTUBE) */
 #mobile-focus-area {
     margin: 15px 15px 0px 15px;
-    height: 350px !important; /* TRAVA ABSOLUTA: O quadro central nunca mais muda de tamanho */
+    height: 350px !important; 
     background: #ffffff !important;
     display: flex;
     flex-direction: column;
@@ -360,6 +360,46 @@ header {
     overflow: hidden;
     box-shadow: 0 10px 30px rgba(0,0,0,0.06);
     border: 1px solid rgba(0,0,0,0.05);
+    transition: all 0.3s ease;
+}
+
+/* ESTADO IMERSIVO: MÍDIA NO TOPO */
+body.focus-active #mobile-focus-area {
+    margin: 0 !important;
+    width: 100% !important;
+    height: 400px !important;
+    border-radius: 0 0 30px 30px !important;
+    border-top: none !important;
+}
+
+body.focus-active header {
+    position: absolute !important;
+    top: 0 !important;
+    width: 100% !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    pointer-events: none; /* Deixa passar clique para a mídia se necessário */
+}
+
+body.focus-active header .identity-row {
+    display: none !important;
+}
+
+body.focus-active header .actions-row {
+    pointer-events: auto; /* Reativa cliques nos botões */
+    padding-top: 5px !important;
+}
+
+body.focus-active header .icon-btn-premium {
+    background: rgba(255,255,255,0.2) !important;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    color: white !important;
+    border: 1px solid rgba(255,255,255,0.3);
+}
+
+body.focus-active #scene {
+    height: calc(100vh - 400px - 80px) !important;
 }
 
 #mobile-focus-content {

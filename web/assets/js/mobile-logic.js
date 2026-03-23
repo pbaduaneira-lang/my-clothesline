@@ -103,6 +103,8 @@ function updateMobileFocus(post) {
     if (!container || !content || !post) return;
     
     container.style.display = "flex";
+    document.body.classList.add('focus-active');
+
     // Altura controlada pelo mobile.css (#mobile-focus-area)
     const mediaUrl = getMediaUrl(post);
     const postType = detectPostType(post, mediaUrl);
