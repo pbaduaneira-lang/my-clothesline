@@ -686,13 +686,32 @@ header {
 }
 
 #modalCommentMobile .modal-content {
-    height: calc(100vh - 440px) !important;
+    height: calc(100vh - 120px) !important;
     border-radius: 24px 24px 0 0 !important;
     pointer-events: auto !important;
     box-shadow: 0 -10px 30px rgba(0,0,0,0.1) !important;
     transform: translateY(0);
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
+
+.comment-media-preview {
+    width: 100%;
+    height: 180px;
+    background: #000;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-bottom: 2px solid #f1f5f9;
+}
+
+.comment-media-preview img,
+.comment-media-preview video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
 
 /* Ajuste do Scene para expansão automática sem navbar inferior */
 #scene {

@@ -197,8 +197,18 @@ async function abrirInterfaceComentarioMobile(postId) {
     list.innerHTML = "<div style='text-align:center; padding:20px; color:#666; font-size:14px;'>Carregando comentários...</div>";
     input.value = "";
 
-    // Procura o post nos dados locais para extrair comentários iniciais (mais rápido)
+    // Renderiza a mídia do post no topo do modal
+    const mediaContainer = document.getElementById("commentPostMedia");
     const post = postsData.find(p => p.id === postId);
+    if (mediaContainer && post) {
+        const mediaUrl = getMediaUrl(post);
+        const postType = detectPostType(post, mediaUrl);
+        mediaContainer.innerHTML = postType === 'video' 
+            ? `<video src="${mediaUrl}" autoplay muted loop playsinline></video>` 
+            : `<img src="${mediaUrl}">`;
+    }
+
+    // Procura o post nos dados locais para extrair comentários iniciais (mais rápido)
     if (post) {
         renderizarListaComentariosMobile(post.comments || []);
     }
