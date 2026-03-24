@@ -949,7 +949,7 @@ app.post("/post", upload.single("media"), async (req, res) => {
     console.log(`[Upload Cloud] Sucesso! URL: ${media_url}`);
 
     const result = await pool.query(
-      "INSERT INTO posts (user_id, media_url, type, caption, author_id, created_at, expires_at, is_private) VALUES ($1,$2,$3,$4,$5,NOW(), NOW() + INTERVAL '48 hours', $6) RETURNING *",
+      "INSERT INTO posts (user_id, media_url, type, caption, author_id, created_at, expires_at, is_private) VALUES ($1,$2,$3,$4,$5,NOW(), NULL, $6) RETURNING *",
       [author_id, media_url, type, caption, author_id, isPrivateFlag]
     );
 
@@ -1035,7 +1035,7 @@ app.post("/post/:id/share", async (req, res) => {
 
     // 3. Cria o novo post (re-postagem)
     await pool.query(
-      "INSERT INTO posts (user_id, media_url, type, caption, author_id, shared_from_id, created_at, expires_at) VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW() + INTERVAL '48 hours')",
+      "INSERT INTO posts (user_id, media_url, type, caption, author_id, shared_from_id, created_at, expires_at) VALUES ($1, $2, $3, $4, $5, $6, NOW(), NULL)",
       [p.user_id, p.media_url, p.type, p.caption, sharerId, originalPostId]
     );
 
@@ -1222,9 +1222,9 @@ app.get("/feed", async (req, res) => {
       LEFT JOIN follows f ON f.followed_id = p.author_id AND f.follower_id = $1
       LEFT JOIN comments c ON c.post_id = p.id
       LEFT JOIN users cu ON c.author_id = cu.id
-      WHERE (p.expires_at > NOW() OR p.expires_at IS NULL) AND p.is_private = false
+      WHERE p.is_private = false
       GROUP BY p.id, u.name, f.follower_id
-      ORDER BY is_followed DESC, p.created_at ASC
+      ORDER BY p.created_at ASC
     `, [userId]);
     console.log(`Feed carregado para usuário ${userId}: ${result.rows.length} posts encontrados.`);
     res.json(result.rows);
@@ -1269,9 +1269,9 @@ app.get("/feed/user/:id", async (req, res) => {
       LEFT JOIN follows f ON f.followed_id = p.author_id AND f.follower_id = $1
       LEFT JOIN comments c ON c.post_id = p.id
       LEFT JOIN users cu ON c.author_id = cu.id
-      WHERE p.author_id = $2 AND (p.expires_at > NOW() OR p.expires_at IS NULL) AND p.is_private = false
+      WHERE p.author_id = $2 AND p.is_private = false
       GROUP BY p.id, u.name, f.follower_id
-      ORDER BY p.created_at DESC
+      ORDER BY p.created_at ASC
     `, [userId, targetUserId]);
     res.json(result.rows);
   } catch (err) {

@@ -599,9 +599,9 @@ function verAniversariantes() {
     }
 }
 
-function abrirTermos() {
-    alert("Abrindo Termos de Uso e Política de Privacidade...");
-}
+
+
+
 
 function verSugestoes() {
     alert("Procurando as melhores sugestões de conexões para você! ✨");
