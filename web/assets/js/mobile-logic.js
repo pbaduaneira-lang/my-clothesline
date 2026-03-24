@@ -1111,7 +1111,62 @@ async function compartilharPost(postId) {
         }
     }
 }
+// --- SISTEMA DE SUGESTÕES MOBILE ---
 
+async function abrirSugestoesMobile() {
+    const modal = document.getElementById("modalSuggestionsMobile");
+    const list = document.getElementById("suggestionsListMobile");
+    if (!modal || !list) return;
 
+    modal.style.display = "flex";
+    list.innerHTML = `
+        <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:40px; gap:15px;">
+            <div class="spinner"></div>
+            <div style="color:#64748b; font-size:14px; font-weight:600;">Buscando novas conexões...</div>
+        </div>
+    `;
 
+    try {
+        const res = await fetch(`${API_BASE}/users/search?q=`, { headers: updateAuthHeaders() });
+        let users = await res.json();
+        
+        if (currentUser) {
+            users = users.filter(u => Number(u.id) !== Number(currentUser.id));
+        }
 
+        if (users.length === 0) {
+            list.innerHTML = `
+                <div style="text-align:center; padding:50px 20px; color:#94a3b8;">
+                    <i data-lucide="user-minus" style="width:48px; height:48px; margin-bottom:15px; opacity:0.3;"></i>
+                    <p style="margin:0; font-weight:600;">Nenhuma sugestão encontrada.</p>
+                </div>
+            `;
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+            return;
+        }
+
+        list.innerHTML = users.map(u => `
+            <div class="glass" style="display: flex; align-items: center; gap: 15px; padding: 15px; border-radius: 20px; background: white; border: 1px solid var(--glass-border); box-shadow: 0 4px 15px rgba(0,0,0,0.03);">
+                <div class="user-avatar" style="width: 45px; height: 45px; font-size: 16px; flex-shrink: 0; background: linear-gradient(135deg, var(--primary), #fb923c);">${u.name[0].toUpperCase()}</div>
+                <div style="flex: 1; overflow: hidden;">
+                    <div style="font-weight: 800; font-size: 15px; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${u.name}</div>
+                    <div style="font-size: 12px; color: #64748b;">@${u.username}</div>
+                </div>
+                <button onclick="seguirUsuario(${u.id}); this.textContent='Seguindo'; this.style.background='#f1f5f9'; this.style.color='#64748b'; this.disabled=true;" 
+                        class="btn-follow" style="padding: 8px 16px; font-size: 12px; border-radius: 12px; font-weight: 700;">
+                    Seguir
+                </button>
+            </div>
+        `).join("");
+
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+    } catch (e) {
+        console.error("Erro ao buscar sugestões mobile:", e);
+        list.innerHTML = "<div style='text-align:center; padding:30px; color:#ef4444; font-weight:600;'>Erro ao carregar. Tente novamente.</div>";
+    }
+}
+
+function fecharSugestoesMobile() {
+    const modal = document.getElementById("modalSuggestionsMobile");
+    if (modal) modal.style.display = "none";
+}
