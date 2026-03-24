@@ -603,8 +603,54 @@ function verAniversariantes() {
 
 
 
-function verSugestoes() {
-    alert("Procurando as melhores sugestões de conexões para você! ✨");
+async function verSugestoes() {
+    const modal = document.getElementById("modalSuggestions");
+    const list = document.getElementById("suggestionsList");
+    if (!modal || !list) return;
+
+    modal.style.display = "flex";
+    list.innerHTML = "<div style='text-align:center; padding:20px; color:#64748b;'>Buscando novas conexões...</div>";
+
+    try {
+        // Busca alguns usuários (usando q= como 'trigger' para o backend retornar algo)
+        const res = await fetch(`${API_BASE}/users/search?q=`, { headers: updateAuthHeaders() });
+        let users = await res.json();
+        
+        // Filtra para não sugerir a si mesmo
+        if (currentUser) {
+            users = users.filter(u => Number(u.id) !== Number(currentUser.id));
+        }
+
+        if (users.length === 0) {
+            list.innerHTML = "<div style='text-align:center; padding:40px; color:#94a3b8;'>Nenhuma sugestão no momento.</div>";
+            return;
+        }
+
+        // Renderiza a lista
+        list.innerHTML = users.map(u => `
+            <div class="glass" style="display: flex; align-items: center; gap: 12px; padding: 12px 18px; border-radius: 20px; background: white; border: 1px solid var(--glass-border); box-shadow: 0 4px 10px rgba(0,0,0,0.02);">
+                <div class="user-avatar" style="width: 40px; height: 40px; font-size: 14px; flex-shrink: 0;">${u.name[0].toUpperCase()}</div>
+                <div style="flex: 1; overflow: hidden;">
+                    <div style="font-weight: 800; font-size: 14px; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${u.name}</div>
+                    <div style="font-size: 11px; color: #64748b;">@${u.username}</div>
+                </div>
+                <!-- Reutiliza a lógica de seguir do feed -->
+                <button onclick="seguirUsuario(${u.id}); this.textContent='Seguindo'; this.classList.add('following');" class="btn-follow" style="padding: 6px 15px; font-size: 11px; border-radius: 10px;">
+                    Seguir
+                </button>
+            </div>
+        `).join("");
+
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+    } catch (e) {
+        console.error("Erro ao buscar sugestões:", e);
+        list.innerHTML = "<div style='text-align:center; padding:20px; color:red;'>Erro ao carregar sugestões.</div>";
+    }
+}
+
+function fecharSugestoes() {
+    const modal = document.getElementById("modalSuggestions");
+    if (modal) modal.style.display = "none";
 }
 // COMENTÁRIOS DESKTOP COMPLETO
 async function abrirComentariosDesktop(postId) {
