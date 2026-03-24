@@ -43,10 +43,15 @@ function renderFeed() {
     // Apenas seleciona o primeiro se o foco estiver vazio ou for a primeira carga
     const focusContent = document.getElementById("mobile-focus-content");
     if (postsData.length > 0 && (!focusContent || focusContent.innerHTML === "")) {
-        setTimeout(() => updateMobileFocus(postsData[0]), 300);
+        setTimeout(() => updateMobileFocus(postsData[postsData.length - 1]), 300);
     }
     
     if (typeof lucide !== 'undefined') lucide.createIcons();
+
+    // Rola para a direita no início (último post)
+    setTimeout(() => {
+        scene.scrollTo({ left: scene.scrollWidth, behavior: 'smooth' });
+    }, 500);
 }
 
 let currentFocusedPostId = null;
